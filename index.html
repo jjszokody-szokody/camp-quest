@@ -33,6 +33,7 @@ h2{margin:4px 0 14px;font-weight:600;color:#cfe8c0;font-size:clamp(13px,3vw,18px
 #bAct{width:86px;height:86px;right:0;bottom:0;background:#c0392bcc}
 #bUse{width:62px;height:62px;right:96px;bottom:4px;background:#2e86c1cc}
 #bShoot{width:56px;height:56px;right:6px;bottom:96px;background:#8e44adcc}
+#bJump{width:56px;height:56px;right:166px;bottom:6px;background:#27ae60cc}
 #bEat{width:50px;height:50px;right:82px;bottom:82px}
 #bBag{width:50px;height:50px;right:150px;bottom:90px}
 #bMap{width:44px;height:44px;right:150px;bottom:150px}
@@ -118,10 +119,11 @@ body:not(.desktop) #heldName{bottom:calc(54px + env(safe-area-inset-bottom))}
  <div id="info"></div>
  <canvas id="minimap" width="160" height="160"></canvas>
  <div id="bossbar" class="hidden"><div id="bossName"></div><div class="bar"><i id="bossB" style="background:#c0392b"></i></div></div>
- <div id="coins">🪙 <span id="coinV">0</span></div><div id="heldName"></div><div id="toast"></div><div id="prompt" class="hidden"></div>
+ <div id="coins">🪙 <span id="coinV">0</span> &nbsp;📅 Day <span id="dayV">1</span> <span id="raidV" style="color:#ff8a8a"></span></div><div id="heldName"></div><div id="toast"></div><div id="prompt" class="hidden"></div>
  <div id="stick"><div id="knobBase"><div id="knob"></div></div></div>
  <div id="ctrl">
   <div class="cb" id="bAct"><span>⚔️</span>HIT</div>
+  <div class="cb" id="bJump"><span>⤴️</span>JUMP</div>
   <div class="cb" id="bUse"><span>✋</span><em id="useL" style="font-style:normal">USE</em></div>
   <div class="cb" id="bShoot"><span>🏹</span>SHOOT</div>
   <div class="cb" id="bEat"><span>🍖</span>EAT</div>
@@ -129,9 +131,9 @@ body:not(.desktop) #heldName{bottom:calc(54px + env(safe-area-inset-bottom))}
   <div class="cb" id="bMap"><span>🗺️</span></div>
  </div>
  <div id="hotbar"></div>
- <div id="keys"><b>Controls</b> (H hides)<br>WASD/Arrows move · Left-click hit (aims at cursor)<br>Right-click / F shoot bow · E use/talk<br>1–9 select/use hotbar · Tab/I bag · C recipes · J quests · M map<br>Wheel zoom · Right-drag or Z/X rotate camera<br>Esc pause</div>
+ <div id="keys"><b>Controls</b> (H hides)<br>WASD/Arrows move · Space jump · Left-click hit (aims at cursor)<br>Right-click / F shoot bow · E use/talk<br>1–9 select/use hotbar · Tab/I bag · C recipes · J quests · M map<br>Wheel zoom · Right-drag or Z/X rotate camera<br>Esc pause</div>
 </div>
-<div id="pause" class="screen hidden"><h1>⏸ Paused</h1><div><button class="btn" id="pResume">Resume</button><button class="btn alt" id="pQuit">Save &amp; quit to menu</button></div><div id="how" style="margin-top:14px">WASD/Arrows move · Left-click hit · Right-click/F shoot · E use · 1–9 hotbar · Tab/I bag · C craft · M map · Wheel zoom · Right-drag or Z/X rotate</div></div>
+<div id="pause" class="screen hidden"><h1>⏸ Paused</h1><div><button class="btn" id="pResume">Resume</button><button class="btn alt" id="pQuit">Save &amp; quit to menu</button></div><div id="how" style="margin-top:14px">WASD/Arrows move · Space jump · Left-click hit · Right-click/F shoot · E use · 1–9 hotbar · Tab/I bag · C craft · M map · Wheel zoom · Right-drag or Z/X rotate</div></div>
 <div id="bag" class="panel hidden"><div class="ph"><button class="tab on" id="t_bag">🎒 Bag &amp; Craft</button><button class="tab" id="t_book">📖 Recipe book</button><button class="tab" id="t_quests">📜 Quests</button><span id="benchNote" style="font-size:12px;opacity:.8"></span><button class="x" id="bagX">✕</button></div><div class="pb" id="bagBody"></div></div>
 <div id="talk" class="hidden"><canvas id="portrait" width="96" height="96"></canvas><div style="flex:1"><div id="talkName"></div><div id="talkText"></div><div id="talkCh"></div></div></div>
 <div id="shop" class="panel hidden"><div class="ph"><span id="shopTitle"></span><button class="tab on" id="s_buy">Buy</button><button class="tab" id="s_sell">Sell</button><span id="shopCoins" style="color:#ffd400"></span><button class="x" id="shopX">✕</button></div><div class="pb" id="shopBody"></div></div>
