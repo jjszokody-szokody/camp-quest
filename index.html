@@ -56,6 +56,16 @@ h2{margin:4px 0 14px;font-weight:600;color:#cfe8c0;font-size:clamp(13px,3vw,18px
 #rot{position:fixed;inset:0;z-index:40;background:#0a140c;display:none;align-items:center;justify-content:center;text-align:center;font-size:20px;padding:30px}
 @media (orientation:portrait) and (pointer:coarse){#rot.need{display:flex}}
 .dmg{position:fixed;z-index:6;pointer-events:none;font-weight:900;font-size:16px;text-shadow:0 2px 2px #000;transition:transform .8s,opacity .8s}
+body.desktop #stick,body.desktop #ctrl{display:none!important}
+body:not(.desktop) #hotbar,body:not(.desktop) #keys{display:none!important}
+#hotbar{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:4px;pointer-events:auto}
+.hs{width:58px;height:58px;background:#000a;border:2px solid #fff4;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px;position:relative;cursor:pointer}
+.hs b{position:absolute;top:1px;left:4px;font-size:10px;opacity:.8}.hs i{font-style:normal;font-size:10px;position:absolute;bottom:1px;right:4px}.hs.off{opacity:.35}
+#keys{position:absolute;right:10px;bottom:10px;background:#000a;border-radius:8px;padding:6px 10px;font-size:11px;line-height:1.5;pointer-events:auto;max-width:230px}
+#keys.min{font-size:11px}
+body.desktop #prompt{bottom:80px}
+body.desktop canvas{cursor:crosshair}
+#pause{z-index:25}
 #win{z-index:35}
 #iosHint{font-size:12px;opacity:.75;margin-top:8px;max-width:520px}
 </style>
@@ -67,7 +77,7 @@ h2{margin:4px 0 14px;font-weight:600;color:#cfe8c0;font-size:clamp(13px,3vw,18px
  <div id="loadMsg">Loading…</div>
  <div id="how">Start in the central forest. ❄️ North: Snowy Mountains · 🌴 East: Jungle · 🏜️ South: Desert · 🌋 West: Volcanic Lands.<br>
  Punch trees (10 hits) or use an axe (5 hits). Mining needs a pickaxe. Craft cold gear for the snow and heat gear for the desert &amp; lava.
- Visit villages to trade, take quests, and learn where the bosses hide.<br>Keys: WASD move · Space attack/gather · E use/talk · F shoot · Q eat · C craft · M map</div>
+ Visit villages to trade, take quests, and learn where the bosses hide.<br>Computer: WASD/Arrows move · click to hit · right-click shoot · E use · 1–9 hotbar · Tab bag · C craft · M map · wheel zoom · Esc pause. Phone: joystick + buttons.</div>
  <div id="iosHint"></div>
 </div>
 <div id="rot">🔄 Turn your phone sideways to play</div>
@@ -92,7 +102,10 @@ h2{margin:4px 0 14px;font-weight:600;color:#cfe8c0;font-size:clamp(13px,3vw,18px
   <div class="cb" id="bBag"><span>🎒</span>CRAFT</div>
   <div class="cb" id="bMap"><span>🗺️</span></div>
  </div>
+ <div id="hotbar"></div>
+ <div id="keys"><b>Controls</b> (H hides)<br>WASD/Arrows move · Left-click hit (aims at cursor)<br>Right-click / F shoot bow · E use/talk<br>1–9 hotbar · Tab/I bag · C craft · M map<br>Wheel zoom · Right-drag or Z/X rotate camera<br>Esc pause</div>
 </div>
+<div id="pause" class="screen hidden"><h1>⏸ Paused</h1><div><button class="btn" id="pResume">Resume</button><button class="btn alt" id="pQuit">Save &amp; quit to menu</button></div><div id="how" style="margin-top:14px">WASD/Arrows move · Left-click hit · Right-click/F shoot · E use · 1–9 hotbar · Tab/I bag · C craft · M map · Wheel zoom · Right-drag or Z/X rotate</div></div>
 <div id="bag" class="panel hidden"><div class="ph"><button class="tab on" id="tCraft">🔨 Craft</button><button class="tab" id="tInv">🎒 Bag</button><span id="benchNote" style="font-size:12px;opacity:.8"></span><button class="x" id="bagX">✕</button></div><div class="pb" id="bagBody"></div></div>
 <div id="dlg" class="panel hidden"><div class="ph"><span id="dlgTitle"></span><button class="x" id="dlgX">✕</button></div><div class="pb"><div id="dlgText"></div><div id="dlgBtns" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px"></div></div></div>
 <div id="fullMap" class="hidden"><canvas id="fullMapCan" width="600" height="600"></canvas><div id="fmLeg">🟡 you · 🏠 village · 💀 boss (revealed) · 🔥 camp · tap to close</div></div>

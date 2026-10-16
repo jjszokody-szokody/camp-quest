@@ -1,2 +1,3 @@
 # Camp Quest: Four Realms
-Mobile/desktop survival camp-building game (three.js PWA). Built on the Tribute Arena engine (character/animal rigs, Quaternius CC0 models, ambientCG CC0 textures). Play: https://jjszokody-szokody.github.io/camp-quest/
+Survival camp-building game for phone and computer (three.js PWA). All characters, animals, bosses, textures and animation are original procedural code.
+Play: https://jjszokody-szokody.github.io/camp-quest/
