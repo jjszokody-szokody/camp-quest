@@ -33,6 +33,8 @@ h2{margin:4px 0 14px;font-weight:600;color:#cfe8c0;font-size:clamp(13px,3vw,18px
 #bAct{width:86px;height:86px;right:0;bottom:0;background:#c0392bcc}
 #bUse{width:62px;height:62px;right:96px;bottom:4px;background:#2e86c1cc}
 #bShoot{width:56px;height:56px;right:6px;bottom:96px;background:#8e44adcc}
+#bRot{width:50px;height:50px;right:172px;bottom:72px;background:#d68910cc}
+#bBlock{width:54px;height:54px;right:6px;bottom:158px;background:#2c3e50cc}
 #bJump{width:56px;height:56px;right:166px;bottom:6px;background:#27ae60cc}
 #bEat{width:50px;height:50px;right:82px;bottom:82px}
 #bBag{width:50px;height:50px;right:150px;bottom:90px}
@@ -104,7 +106,7 @@ body:not(.desktop) #heldName{bottom:calc(54px + env(safe-area-inset-bottom))}
  <div id="loadMsg">Loading…</div><div>Graphics: <select id="gfxSel"><option value="low">Low (phones)</option><option value="medium">Medium</option><option value="high">High (realistic)</option></select></div>
  <div id="how">Start in the central forest. ❄️ North: Snowy Mountains · 🌴 East: Jungle · 🏜️ South: Desert · 🌋 West: Volcanic Lands.<br>
  Punch trees (10 hits) or use an axe (5 hits). Mining needs a pickaxe. Craft cold gear for the snow and heat gear for the desert &amp; lava.
- Visit villages to trade, take quests, and learn where the bosses hide.<br>Computer: WASD/Arrows move · click to hit · right-click shoot · E use · 1–9 hotbar · Tab bag · C craft · M map · wheel zoom · Esc pause. Phone: joystick + buttons.</div>
+ Visit villages to trade, take quests, and learn where the bosses hide.<br>Computer: WASD/Arrows move · click to hit · right-click shoot · E use · Q block · R rotate build · 1–9 hotbar · Tab bag · C craft · M map · wheel zoom · Esc pause. Phone: joystick + buttons.</div>
  <div id="iosHint"></div>
 </div>
 <div id="rot">🔄 Turn your phone sideways to play</div>
@@ -123,6 +125,8 @@ body:not(.desktop) #heldName{bottom:calc(54px + env(safe-area-inset-bottom))}
  <div id="stick"><div id="knobBase"><div id="knob"></div></div></div>
  <div id="ctrl">
   <div class="cb" id="bAct"><span>⚔️</span>HIT</div>
+  <div class="cb" id="bRot" style="display:none"><span>↻</span>ROTATE</div>
+  <div class="cb" id="bBlock" style="display:none"><span>🔰</span>BLOCK</div>
   <div class="cb" id="bJump"><span>⤴️</span>JUMP</div>
   <div class="cb" id="bUse"><span>✋</span><em id="useL" style="font-style:normal">USE</em></div>
   <div class="cb" id="bShoot"><span>🏹</span>SHOOT</div>
@@ -131,7 +135,7 @@ body:not(.desktop) #heldName{bottom:calc(54px + env(safe-area-inset-bottom))}
   <div class="cb" id="bMap"><span>🗺️</span></div>
  </div>
  <div id="hotbar"></div>
- <div id="keys"><b>Controls</b> (H hides)<br>WASD/Arrows move · Space jump · Left-click hit (aims at cursor)<br>Right-click / F shoot bow · E use/talk<br>1–9 select/use hotbar · Tab/I bag · C recipes · J quests · M map<br>Wheel zoom · Right-drag or Z/X rotate camera<br>Esc pause</div>
+ <div id="keys"><b>Controls</b> (H hides)<br>WASD/Arrows move · Space jump · Left-click hit (aims at cursor)<br>Right-click / F shoot bow · E use/talk · Q block (shield)<br>R rotate placement · 1–9 select/use hotbar · Tab/I bag · C recipes · J quests · M map<br>Wheel zoom · Right-drag or Z/X rotate camera<br>Esc pause</div>
 </div>
 <div id="pause" class="screen hidden"><h1>⏸ Paused</h1><div><button class="btn" id="pResume">Resume</button><button class="btn alt" id="pQuit">Save &amp; quit to menu</button></div><div id="musicSet" style="margin-top:12px;font-size:16px">🎵 Music volume <input type="range" id="musVol" min="0" max="100" style="vertical-align:middle;width:160px"> <label><input type="checkbox" id="musMute"> Mute</label></div><div id="how" style="margin-top:14px">WASD/Arrows move · Space jump · Left-click hit · Right-click/F shoot · E use · 1–9 hotbar · Tab/I bag · C craft · M map · Wheel zoom · Right-drag or Z/X rotate</div></div>
 <div id="bag" class="panel hidden"><div class="ph"><button class="tab on" id="t_bag">🎒 Bag &amp; Craft</button><button class="tab" id="t_book">📖 Recipe book</button><button class="tab" id="t_quests">📜 Quests</button><span id="benchNote" style="font-size:12px;opacity:.8"></span><button class="x" id="bagX">✕</button></div><div class="pb" id="bagBody"></div></div>
