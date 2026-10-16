@@ -66,6 +66,32 @@ body:not(.desktop) #hotbar,body:not(.desktop) #keys{display:none!important}
 body.desktop #prompt{bottom:80px}
 body.desktop canvas{cursor:crosshair}
 #pause{z-index:25}
+
+.sl{width:52px;height:52px;background:#3a2a1a;border:2px solid #7a5a30;border-radius:6px;display:flex;align-items:center;justify-content:center;position:relative;font-size:26px;cursor:pointer;touch-action:none}
+.sl.sel{border-color:#ffd400;box-shadow:0 0 6px #ffd400}.sl i{position:absolute;right:3px;bottom:1px;font-size:12px;font-style:normal;font-weight:800;text-shadow:0 1px 2px #000}.sl.outok{border-color:#8f8;background:#2a4a2a}
+.ig{display:grid;grid-template-columns:repeat(9,52px);gap:3px}.cgrid{display:grid;gap:3px}.lbl{font-weight:800;margin:6px 0 3px;font-size:13px;color:#f0c070}
+#bagBody{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}.invwrap{flex:0 0 auto}.craftwrap{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:200px}.arrow{font-size:28px}.rn{font-size:13px;text-align:center}
+.up{background:#2c2015;border:1px solid #c99a4a;border-radius:8px;padding:6px;font-size:12px;text-align:center}.up button,.card button{padding:6px 12px;border-radius:7px;border:0;background:#f0a83c;font-weight:800;color:#2a1505;margin-top:4px}.up button:disabled{opacity:.35}
+.tip{font-size:11px;opacity:.7;max-width:230px;text-align:center}
+.book{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px;width:100%}.card.lock{opacity:.55}
+.mini{display:grid;gap:2px;margin:3px 0}.mini b{width:22px;height:22px;background:#3a2a1a;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:14px}.mini.sl2{display:flex;align-items:center;gap:2px}
+#heldIcon{position:fixed;z-index:40;pointer-events:none;font-size:34px;width:44px;height:44px;display:flex;align-items:center;justify-content:center}#heldIcon i{position:absolute;right:0;bottom:0;font-size:12px;font-style:normal;font-weight:800}
+#hotbar{position:absolute;bottom:max(8px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:3px;pointer-events:auto}
+.hs.sel{border-color:#ffd400;box-shadow:0 0 8px #ffd400}
+body:not(.desktop) .hs{width:40px;height:40px;font-size:18px}
+#heldName{position:absolute;bottom:calc(76px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);font-size:12px;text-shadow:0 1px 3px #000;white-space:nowrap}
+body:not(.desktop) #heldName{bottom:calc(54px + env(safe-area-inset-bottom))}
+#coins{position:absolute;top:max(64px,calc(env(safe-area-inset-top) + 58px));left:calc(46px + env(safe-area-inset-left));font-weight:800;font-size:13px;text-shadow:0 1px 3px #000}
+#bubble{position:fixed;z-index:6;transform:translate(-50%,-100%);background:#fffdf4;color:#2a1a0a;border-radius:12px;padding:5px 10px;font-size:13px;font-weight:600;max-width:220px;text-align:center;pointer-events:none;box-shadow:0 2px 6px #0006}
+#bubble:after{content:'';position:absolute;left:50%;bottom:-7px;margin-left:-7px;border:7px solid transparent;border-top-color:#fffdf4;border-bottom:0}
+#talk{position:fixed;left:50%;transform:translateX(-50%);bottom:max(12px,env(safe-area-inset-bottom));width:min(760px,94vw);z-index:24;background:linear-gradient(#1e2a4aee,#121a30ee);border:3px solid #e8d8a0;border-radius:14px;display:flex;gap:12px;padding:12px;box-shadow:0 6px 20px #000a}
+#portrait{width:96px;height:96px;border-radius:10px;border:2px solid #e8d8a0;flex:0 0 auto}
+#talkName{font-weight:900;color:#ffd770;margin-bottom:4px}#talkText{font-size:16px;line-height:1.45;min-height:46px;white-space:pre-wrap}
+#talkCh{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}#talkCh button{background:#e8d8a0;color:#1a1a30;border:0;border-radius:8px;padding:8px 12px;font-weight:800;font-size:14px;cursor:pointer}#talkCh button:hover{background:#fff}
+.ware{background:linear-gradient(#6a4a2a,#4a3018);border:2px solid #c99a4a;border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:3px;width:140px}.ware .wi{font-size:38px;background:#2a1a0a;border-radius:50%;width:64px;height:64px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 6px #000}.ware .wn{font-weight:800;font-size:13px;text-align:center}.ware .wp{color:#ffd400;font-weight:800}
+.ware button{padding:5px 12px;border-radius:7px;border:0;background:#f0a83c;font-weight:800;color:#2a1505}.ware button:disabled{opacity:.35}
+#shopBody{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;background:repeating-linear-gradient(0deg,#3a2614 0 60px,#2a1a0c 60px 66px)}
+#gfxSel{font-size:15px;padding:6px;border-radius:8px;margin:6px}
 #win{z-index:35}
 #iosHint{font-size:12px;opacity:.75;margin-top:8px;max-width:520px}
 </style>
@@ -74,7 +100,7 @@ body.desktop canvas{cursor:crosshair}
 <div id="title" class="screen">
  <h1>🏕️ Camp Quest</h1><h2>Four Realms · build camp, survive, defeat the four bosses</h2>
  <div><button class="btn" id="bCont" disabled>Continue</button><button class="btn alt" id="bNew" disabled>New Game</button></div>
- <div id="loadMsg">Loading…</div>
+ <div id="loadMsg">Loading…</div><div>Graphics: <select id="gfxSel"><option value="low">Low (phones)</option><option value="medium">Medium</option><option value="high">High (realistic)</option></select></div>
  <div id="how">Start in the central forest. ❄️ North: Snowy Mountains · 🌴 East: Jungle · 🏜️ South: Desert · 🌋 West: Volcanic Lands.<br>
  Punch trees (10 hits) or use an axe (5 hits). Mining needs a pickaxe. Craft cold gear for the snow and heat gear for the desert &amp; lava.
  Visit villages to trade, take quests, and learn where the bosses hide.<br>Computer: WASD/Arrows move · click to hit · right-click shoot · E use · 1–9 hotbar · Tab bag · C craft · M map · wheel zoom · Esc pause. Phone: joystick + buttons.</div>
@@ -92,7 +118,7 @@ body.desktop canvas{cursor:crosshair}
  <div id="info"></div>
  <canvas id="minimap" width="160" height="160"></canvas>
  <div id="bossbar" class="hidden"><div id="bossName"></div><div class="bar"><i id="bossB" style="background:#c0392b"></i></div></div>
- <div id="toast"></div><div id="prompt" class="hidden"></div>
+ <div id="coins">🪙 <span id="coinV">0</span></div><div id="heldName"></div><div id="toast"></div><div id="prompt" class="hidden"></div>
  <div id="stick"><div id="knobBase"><div id="knob"></div></div></div>
  <div id="ctrl">
   <div class="cb" id="bAct"><span>⚔️</span>HIT</div>
@@ -103,11 +129,14 @@ body.desktop canvas{cursor:crosshair}
   <div class="cb" id="bMap"><span>🗺️</span></div>
  </div>
  <div id="hotbar"></div>
- <div id="keys"><b>Controls</b> (H hides)<br>WASD/Arrows move · Left-click hit (aims at cursor)<br>Right-click / F shoot bow · E use/talk<br>1–9 hotbar · Tab/I bag · C craft · M map<br>Wheel zoom · Right-drag or Z/X rotate camera<br>Esc pause</div>
+ <div id="keys"><b>Controls</b> (H hides)<br>WASD/Arrows move · Left-click hit (aims at cursor)<br>Right-click / F shoot bow · E use/talk<br>1–9 select/use hotbar · Tab/I bag · C recipes · J quests · M map<br>Wheel zoom · Right-drag or Z/X rotate camera<br>Esc pause</div>
 </div>
 <div id="pause" class="screen hidden"><h1>⏸ Paused</h1><div><button class="btn" id="pResume">Resume</button><button class="btn alt" id="pQuit">Save &amp; quit to menu</button></div><div id="how" style="margin-top:14px">WASD/Arrows move · Left-click hit · Right-click/F shoot · E use · 1–9 hotbar · Tab/I bag · C craft · M map · Wheel zoom · Right-drag or Z/X rotate</div></div>
-<div id="bag" class="panel hidden"><div class="ph"><button class="tab on" id="tCraft">🔨 Craft</button><button class="tab" id="tInv">🎒 Bag</button><span id="benchNote" style="font-size:12px;opacity:.8"></span><button class="x" id="bagX">✕</button></div><div class="pb" id="bagBody"></div></div>
-<div id="dlg" class="panel hidden"><div class="ph"><span id="dlgTitle"></span><button class="x" id="dlgX">✕</button></div><div class="pb"><div id="dlgText"></div><div id="dlgBtns" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px"></div></div></div>
+<div id="bag" class="panel hidden"><div class="ph"><button class="tab on" id="t_bag">🎒 Bag &amp; Craft</button><button class="tab" id="t_book">📖 Recipe book</button><button class="tab" id="t_quests">📜 Quests</button><span id="benchNote" style="font-size:12px;opacity:.8"></span><button class="x" id="bagX">✕</button></div><div class="pb" id="bagBody"></div></div>
+<div id="talk" class="hidden"><canvas id="portrait" width="96" height="96"></canvas><div style="flex:1"><div id="talkName"></div><div id="talkText"></div><div id="talkCh"></div></div></div>
+<div id="shop" class="panel hidden"><div class="ph"><span id="shopTitle"></span><button class="tab on" id="s_buy">Buy</button><button class="tab" id="s_sell">Sell</button><span id="shopCoins" style="color:#ffd400"></span><button class="x" id="shopX">✕</button></div><div class="pb" id="shopBody"></div></div>
+<div id="chestP" class="panel hidden"><div class="ph">📦 Storage chest<button class="x" id="chestX">✕</button></div><div class="pb" id="chestBody" style="display:block"></div></div>
+<div id="heldIcon" class="hidden"></div><div id="bubble" class="hidden"></div>
 <div id="fullMap" class="hidden"><canvas id="fullMapCan" width="600" height="600"></canvas><div id="fmLeg">🟡 you · 🏠 village · 💀 boss (revealed) · 🔥 camp · tap to close</div></div>
 <div id="win" class="screen hidden"><h1>👑 Champion of the Four Realms!</h1><h2>You defeated the Yeti King, Vine Queen, Sand Pharaoh and Magma Titan.<br>You earned the Crown of the Four Realms (+50% damage).</h2><button class="btn" id="winOk">Keep exploring</button></div>
 <script type="module" src="game.js"></script>
