@@ -1,0 +1,101 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#1d3b22">
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><link rel="icon" href="icon-192.png">
+<title>Camp Quest: Four Realms</title>
+<style>
+*{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:system-ui,-apple-system,sans-serif;color:#fff;touch-action:none}
+canvas{display:block}.hidden{display:none!important}
+.screen{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(#1f3d25,#0a140c);padding:16px;text-align:center}
+h1{margin:0;font-size:clamp(28px,7vw,56px);color:#ffcf5a;text-shadow:0 3px 0 #6b3b0a,0 6px 16px #000;letter-spacing:1px}
+h2{margin:4px 0 14px;font-weight:600;color:#cfe8c0;font-size:clamp(13px,3vw,18px)}
+.btn{background:linear-gradient(#f7b84a,#d9822b);color:#2a1505;border:0;border-radius:12px;padding:12px 26px;font-size:18px;font-weight:800;margin:6px;cursor:pointer;box-shadow:0 4px 0 #7a4210}
+.btn.alt{background:linear-gradient(#5d8a5a,#3c6a3c);color:#fff;box-shadow:0 4px 0 #1f3a1f}
+.btn:disabled{opacity:.4}
+#loadMsg{margin-top:10px;opacity:.8;font-size:13px}
+#how{max-width:640px;font-size:13px;line-height:1.5;opacity:.9;margin-top:8px}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+#bars{position:absolute;top:max(8px,env(safe-area-inset-top));left:calc(46px + env(safe-area-inset-left));display:flex;flex-direction:column;gap:3px}
+.bar{width:min(150px,26vw);height:12px;background:#0008;border-radius:6px;overflow:hidden;position:relative;border:1px solid #fff3}
+.bar i{display:block;height:100%}.bar b{position:absolute;left:4px;top:-1px;font-size:10px;text-shadow:0 1px 1px #000}
+#info{position:absolute;top:max(8px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);text-align:center;font-size:13px;font-weight:700;text-shadow:0 1px 3px #000;background:#0005;padding:3px 10px;border-radius:10px}
+#quit{position:absolute;top:max(6px,env(safe-area-inset-top));left:max(6px,env(safe-area-inset-left));width:34px;height:34px;border-radius:17px;border:2px solid #fff8;background:#0008;color:#fff;font-size:17px;font-weight:900;pointer-events:auto}
+#minimap{position:absolute;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));width:min(110px,22vw);height:min(110px,22vw);border-radius:50%;border:2px solid #fff6;background:#0006;pointer-events:auto}
+#bossbar{position:absolute;top:56px;left:50%;transform:translateX(-50%);width:min(420px,60vw);text-align:center;font-weight:800;text-shadow:0 1px 3px #000}
+#bossbar .bar{width:100%;height:14px}
+#toast{position:absolute;top:30%;left:50%;transform:translateX(-50%);font-size:16px;font-weight:800;text-shadow:0 2px 4px #000;text-align:center;max-width:80vw;transition:opacity .4s}
+#prompt{position:absolute;bottom:calc(150px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);font-size:13px;background:#0007;padding:4px 10px;border-radius:8px}
+#ctrl{position:absolute;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));width:230px;height:200px;pointer-events:none}
+.cb{position:absolute;pointer-events:auto;border-radius:50%;border:2px solid #fff8;background:#0007;color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-direction:column;touch-action:none}
+.cb span{font-size:22px;line-height:1}
+#bAct{width:86px;height:86px;right:0;bottom:0;background:#c0392bcc}
+#bUse{width:62px;height:62px;right:96px;bottom:4px;background:#2e86c1cc}
+#bShoot{width:56px;height:56px;right:6px;bottom:96px;background:#8e44adcc}
+#bEat{width:50px;height:50px;right:82px;bottom:82px}
+#bBag{width:50px;height:50px;right:150px;bottom:90px}
+#bMap{width:44px;height:44px;right:150px;bottom:150px}
+#stick{position:absolute;left:0;bottom:0;width:45%;height:65%;pointer-events:auto;touch-action:none}
+#knobBase{position:absolute;width:120px;height:120px;border-radius:50%;border:2px solid #fff5;background:#0004;left:calc(30px + env(safe-area-inset-left));bottom:calc(30px + env(safe-area-inset-bottom))}
+#knob{position:absolute;width:54px;height:54px;border-radius:50%;background:#fffa;left:33px;top:33px}
+.panel{position:fixed;inset:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));z-index:20;background:#1b140dee;border:2px solid #c99a4a;border-radius:14px;display:flex;flex-direction:column;overflow:hidden}
+.ph{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#3a2814;font-weight:800}
+.ph .x{margin-left:auto;width:38px;height:38px;border-radius:19px;border:2px solid #fff6;background:#0006;color:#fff;font-size:18px}
+.tab{padding:7px 14px;border-radius:8px;border:0;background:#5a4020;color:#fff;font-weight:700}.tab.on{background:#f0a83c;color:#2a1505}
+.pb{flex:1;overflow-y:auto;padding:8px;touch-action:pan-y;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px;align-content:start}
+.pb *{touch-action:pan-y}
+.card{background:#2c2015;border:1px solid #6b5030;border-radius:10px;padding:7px;font-size:12px;display:flex;flex-direction:column;gap:4px}
+.card .t{font-weight:800;font-size:14px}.card .c{opacity:.85}.ok{color:#8f8}.no{color:#f88}
+.card button{align-self:flex-start;padding:6px 12px;border-radius:7px;border:0;background:#f0a83c;font-weight:800;color:#2a1505}
+.card button:disabled{opacity:.35}
+#dlg .pb{display:block}#dlgText{font-size:15px;line-height:1.5;margin-bottom:10px}
+#fullMap{position:fixed;inset:0;z-index:22;background:#000d;display:flex;align-items:center;justify-content:center;flex-direction:column}
+#fullMapCan{width:min(92vw,80vh);height:min(92vw,80vh);border:2px solid #fff5;border-radius:8px}
+#fmLeg{font-size:12px;margin-top:6px;opacity:.85}
+#rot{position:fixed;inset:0;z-index:40;background:#0a140c;display:none;align-items:center;justify-content:center;text-align:center;font-size:20px;padding:30px}
+@media (orientation:portrait) and (pointer:coarse){#rot.need{display:flex}}
+.dmg{position:fixed;z-index:6;pointer-events:none;font-weight:900;font-size:16px;text-shadow:0 2px 2px #000;transition:transform .8s,opacity .8s}
+#win{z-index:35}
+#iosHint{font-size:12px;opacity:.75;margin-top:8px;max-width:520px}
+</style>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+</head><body>
+<div id="title" class="screen">
+ <h1>🏕️ Camp Quest</h1><h2>Four Realms · build camp, survive, defeat the four bosses</h2>
+ <div><button class="btn" id="bCont" disabled>Continue</button><button class="btn alt" id="bNew" disabled>New Game</button></div>
+ <div id="loadMsg">Loading…</div>
+ <div id="how">Start in the central forest. ❄️ North: Snowy Mountains · 🌴 East: Jungle · 🏜️ South: Desert · 🌋 West: Volcanic Lands.<br>
+ Punch trees (10 hits) or use an axe (5 hits). Mining needs a pickaxe. Craft cold gear for the snow and heat gear for the desert &amp; lava.
+ Visit villages to trade, take quests, and learn where the bosses hide.<br>Keys: WASD move · Space attack/gather · E use/talk · F shoot · Q eat · C craft · M map</div>
+ <div id="iosHint"></div>
+</div>
+<div id="rot">🔄 Turn your phone sideways to play</div>
+<div id="hud" class="hidden">
+ <button id="quit">✕</button>
+ <div id="bars">
+  <div class="bar"><i id="hpB" style="background:#e74c3c"></i><b>❤️ Health</b></div>
+  <div class="bar"><i id="huB" style="background:#e67e22"></i><b>🍖 Hunger</b></div>
+  <div class="bar"><i id="thB" style="background:#3498db"></i><b>💧 Thirst</b></div>
+  <div class="bar"><i id="waB" style="background:#f1c40f"></i><b id="waL">🌡️ Temp</b></div>
+ </div>
+ <div id="info"></div>
+ <canvas id="minimap" width="160" height="160"></canvas>
+ <div id="bossbar" class="hidden"><div id="bossName"></div><div class="bar"><i id="bossB" style="background:#c0392b"></i></div></div>
+ <div id="toast"></div><div id="prompt" class="hidden"></div>
+ <div id="stick"><div id="knobBase"><div id="knob"></div></div></div>
+ <div id="ctrl">
+  <div class="cb" id="bAct"><span>⚔️</span>HIT</div>
+  <div class="cb" id="bUse"><span>✋</span><em id="useL" style="font-style:normal">USE</em></div>
+  <div class="cb" id="bShoot"><span>🏹</span>SHOOT</div>
+  <div class="cb" id="bEat"><span>🍖</span>EAT</div>
+  <div class="cb" id="bBag"><span>🎒</span>CRAFT</div>
+  <div class="cb" id="bMap"><span>🗺️</span></div>
+ </div>
+</div>
+<div id="bag" class="panel hidden"><div class="ph"><button class="tab on" id="tCraft">🔨 Craft</button><button class="tab" id="tInv">🎒 Bag</button><span id="benchNote" style="font-size:12px;opacity:.8"></span><button class="x" id="bagX">✕</button></div><div class="pb" id="bagBody"></div></div>
+<div id="dlg" class="panel hidden"><div class="ph"><span id="dlgTitle"></span><button class="x" id="dlgX">✕</button></div><div class="pb"><div id="dlgText"></div><div id="dlgBtns" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px"></div></div></div>
+<div id="fullMap" class="hidden"><canvas id="fullMapCan" width="600" height="600"></canvas><div id="fmLeg">🟡 you · 🏠 village · 💀 boss (revealed) · 🔥 camp · tap to close</div></div>
+<div id="win" class="screen hidden"><h1>👑 Champion of the Four Realms!</h1><h2>You defeated the Yeti King, Vine Queen, Sand Pharaoh and Magma Titan.<br>You earned the Crown of the Four Realms (+50% damage).</h2><button class="btn" id="winOk">Keep exploring</button></div>
+<script type="module" src="game.js"></script>
+</body></html>
