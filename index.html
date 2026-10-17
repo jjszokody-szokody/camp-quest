@@ -1,9 +1,9 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#1d3b22">
+<meta name="apple-mobile-web-app-title" content="Emberfall Survival"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#1d3b22">
 <link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><link rel="icon" href="icon-192.png">
-<title>Camp Quest: Four Realms</title>
+<title>Emberfall Survival</title>
 <style>
 *{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:system-ui,-apple-system,sans-serif;color:#fff;touch-action:none}
@@ -33,8 +33,13 @@ h2{margin:4px 0 14px;font-weight:600;color:#cfe8c0;font-size:clamp(13px,3vw,18px
 #bAct{width:86px;height:86px;right:0;bottom:0;background:#c0392bcc}
 #bUse{width:62px;height:62px;right:96px;bottom:4px;background:#2e86c1cc}
 #bShoot{width:56px;height:56px;right:6px;bottom:96px;background:#8e44adcc}
+#logo{font-size:52px;letter-spacing:1px;color:#ffd9a0;text-shadow:0 0 18px #ff6a00,0 3px 0 #7a2d00,0 6px 14px #000}#logo span{color:#9fe870;text-shadow:0 0 14px #2e8b2e,0 3px 0 #17451a}
+.sw{display:inline-block;width:26px;height:26px;border-radius:50%;border:2px solid #fff6;margin:2px;cursor:pointer}.sw.on{border-color:#ffd400;transform:scale(1.15)}.opt{margin:2px;padding:5px 9px;border-radius:14px;border:1px solid #fff5;background:#0006;color:#fff;cursor:pointer}.opt.on{background:#d9822b;color:#140a02;font-weight:800}.opt:disabled{opacity:.45}
 #bRot{width:50px;height:50px;right:172px;bottom:72px;background:#d68910cc}
 #bBlock{width:54px;height:54px;right:6px;bottom:158px;background:#2c3e50cc}
+#bPick{width:58px;height:58px;right:236px;bottom:6px;background:#8e44adcc}
+#bPlace{width:58px;height:58px;right:236px;bottom:70px;background:#27ae60cc}
+#bCancel{width:52px;height:52px;right:172px;bottom:132px;background:#c0392bcc}
 #bJump{width:56px;height:56px;right:166px;bottom:6px;background:#27ae60cc}
 #bEat{width:50px;height:50px;right:82px;bottom:82px}
 #bBag{width:50px;height:50px;right:150px;bottom:90px}
@@ -101,12 +106,12 @@ body:not(.desktop) #heldName{bottom:calc(54px + env(safe-area-inset-bottom))}
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
 </head><body>
 <div id="title" class="screen">
- <h1>🏕️ Camp Quest</h1><h2>Four Realms · build camp, survive, defeat the four bosses</h2>
- <div><button class="btn" id="bCont" disabled>Continue</button><button class="btn alt" id="bNew" disabled>New Game</button></div>
+ <h1 id="logo">🔥 Emberfall <span>Survival</span></h1><h2>Four realms · build camp, survive, defeat the four bosses</h2>
+ <div><button class="btn" id="bCont" disabled>Continue</button><button class="btn alt" id="bNew" disabled>New Game</button><button class="btn" id="bChar">👤 Character</button></div>
  <div id="loadMsg">Loading…</div><div>Graphics: <select id="gfxSel"><option value="low">Low (phones)</option><option value="medium">Medium</option><option value="high">High (realistic)</option></select></div>
  <div id="how">Start in the central forest. ❄️ North: Snowy Mountains · 🌴 East: Jungle · 🏜️ South: Desert · 🌋 West: Volcanic Lands.<br>
  Punch trees (10 hits) or use an axe (5 hits). Mining needs a pickaxe. Craft cold gear for the snow and heat gear for the desert &amp; lava.
- Visit villages to trade, take quests, and learn where the bosses hide.<br>Computer: WASD/Arrows move · click to hit · right-click shoot · E use · Q block · R rotate build · 1–9 hotbar · Tab bag · C craft · M map · wheel zoom · Esc pause. Phone: joystick + buttons.</div>
+ Visit villages to trade, take quests, and learn where the bosses hide.<br>Computer: WASD/Arrows move · click to hit · right-click shoot · E use · Q block · R rotate build · 1–9 hotbar · Tab bag · C craft · M map · wheel zoom · Esc pause. Forest Soldier raids come on the night of day 5, 10, 15… and grow by one soldier each raid. Phone: joystick + buttons.</div>
  <div id="iosHint"></div>
 </div>
 <div id="rot">🔄 Turn your phone sideways to play</div>
@@ -121,12 +126,15 @@ body:not(.desktop) #heldName{bottom:calc(54px + env(safe-area-inset-bottom))}
  <div id="info"></div>
  <canvas id="minimap" width="160" height="160"></canvas>
  <div id="bossbar" class="hidden"><div id="bossName"></div><div class="bar"><i id="bossB" style="background:#c0392b"></i></div></div>
- <div id="coins">🪙 <span id="coinV">0</span> &nbsp;📅 Day <span id="dayV">1</span> <span id="raidV" style="color:#ff8a8a"></span></div><div id="heldName"></div><div id="toast"></div><div id="prompt" class="hidden"></div>
+ <div id="coins">🪙 <span id="coinV">0</span>  <span id="charNameHud"></span> &nbsp;📅 Day <span id="dayV">1</span> <span id="raidV" style="color:#ff8a8a"></span></div><div id="heldName"></div><div id="toast"></div><div id="prompt" class="hidden"></div>
  <div id="stick"><div id="knobBase"><div id="knob"></div></div></div>
  <div id="ctrl">
   <div class="cb" id="bAct"><span>⚔️</span>HIT</div>
   <div class="cb" id="bRot" style="display:none"><span>↻</span>ROTATE</div>
   <div class="cb" id="bBlock" style="display:none"><span>🔰</span>BLOCK</div>
+  <div class="cb" id="bPick" style="display:none"><span>📦</span>PICK UP</div>
+  <div class="cb" id="bPlace" style="display:none"><span>✅</span>PLACE</div>
+  <div class="cb" id="bCancel" style="display:none"><span>✖</span>PUT BACK</div>
   <div class="cb" id="bJump"><span>⤴️</span>JUMP</div>
   <div class="cb" id="bUse"><span>✋</span><em id="useL" style="font-style:normal">USE</em></div>
   <div class="cb" id="bShoot"><span>🏹</span>SHOOT</div>
@@ -137,7 +145,15 @@ body:not(.desktop) #heldName{bottom:calc(54px + env(safe-area-inset-bottom))}
  <div id="hotbar"></div>
  <div id="keys"><b>Controls</b> (H hides)<br>WASD/Arrows move · Space jump · Left-click hit (aims at cursor)<br>Right-click / F shoot bow · E use/talk · Q block (shield)<br>R rotate placement · 1–9 select/use hotbar · Tab/I bag · C recipes · J quests · M map<br>Wheel zoom · Right-drag or Z/X rotate camera<br>Esc pause</div>
 </div>
-<div id="pause" class="screen hidden"><h1>⏸ Paused</h1><div><button class="btn" id="pResume">Resume</button><button class="btn alt" id="pQuit">Save &amp; quit to menu</button></div><div id="musicSet" style="margin-top:12px;font-size:16px">🎵 Music volume <input type="range" id="musVol" min="0" max="100" style="vertical-align:middle;width:160px"> <label><input type="checkbox" id="musMute"> Mute</label></div><div id="how" style="margin-top:14px">WASD/Arrows move · Space jump · Left-click hit · Right-click/F shoot · E use · 1–9 hotbar · Tab/I bag · C craft · M map · Wheel zoom · Right-drag or Z/X rotate</div></div>
+<div id="charP" class="panel hidden" style="z-index:40"><div class="ph">👤 Character<button class="x" id="charX">✕</button></div><div class="pb" style="display:flex;gap:14px;flex-wrap:wrap;overflow:auto">
+<div><canvas id="charCv" width="240" height="280" style="background:radial-gradient(circle at 50% 35%,#3d6b46,#16281c);border-radius:12px;width:240px;height:280px"></canvas><div style="text-align:center;opacity:.8">Live preview · armor shows on top in game</div></div>
+<div style="flex:1;min-width:260px;line-height:2">
+<label>Name <input id="charName" maxlength="16" style="font-size:16px;padding:5px;border-radius:8px;width:170px"></label><br>
+Skin<br><span id="cSkin"></span><br>Hair style<br><span id="cHairS"></span><br>Hair colour<br><span id="cHairC"></span><br>
+Shirt / outfit<br><span id="cShirt"></span><br>Trousers<br><span id="cPants"></span><br>Hat<br><span id="cHat"></span><br>Face<br><span id="cFace"></span><br>
+<button class="btn" id="charRand">🎲 Randomize</button><button class="btn alt" id="charDone">✔ Done</button>
+<div style="opacity:.8;font-size:13px">🔒 hats unlock from bosses &amp; village quests. Your look is saved with your camp.</div></div></div></div>
+<div id="pause" class="screen hidden"><h1>⏸ Paused</h1><div><button class="btn" id="pResume">Resume</button><button class="btn alt" id="pQuit">Save &amp; quit to menu</button><button class="btn" id="pChar">👤 Character</button></div><div id="musicSet" style="margin-top:12px;font-size:16px">🎵 Music volume <input type="range" id="musVol" min="0" max="100" style="vertical-align:middle;width:160px"> <label><input type="checkbox" id="musMute"> Mute</label></div><div id="how" style="margin-top:14px">WASD/Arrows move · Space jump · Left-click hit · Right-click/F shoot · E use · 1–9 hotbar · Tab/I bag · C craft · M map · Wheel zoom · Right-drag or Z/X rotate</div></div>
 <div id="bag" class="panel hidden"><div class="ph"><button class="tab on" id="t_bag">🎒 Bag &amp; Craft</button><button class="tab" id="t_book">📖 Recipe book</button><button class="tab" id="t_quests">📜 Quests</button><span id="benchNote" style="font-size:12px;opacity:.8"></span><button class="x" id="bagX">✕</button></div><div class="pb" id="bagBody"></div></div>
 <div id="talk" class="hidden"><canvas id="portrait" width="96" height="96"></canvas><div style="flex:1"><div id="talkName"></div><div id="talkText"></div><div id="talkCh"></div></div></div>
 <div id="shop" class="panel hidden"><div class="ph"><span id="shopTitle"></span><button class="tab on" id="s_buy">Buy</button><button class="tab" id="s_sell">Sell</button><span id="shopCoins" style="color:#ffd400"></span><button class="x" id="shopX">✕</button></div><div class="pb" id="shopBody"></div></div>
