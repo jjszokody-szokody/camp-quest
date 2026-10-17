@@ -550,6 +550,87 @@ function updAnimals(dt){const traps=structs.filter(s=>s.type==='trap');for(const
  else aAnim(a,spd>a.K.spd*.5?'run':spd>0?'walk':'idle');}}
 function hitAnimal(a,dmg){a.hp-=dmg;if(bestWeapon()==='lava_sword')a.burnT=3;a.flash=.2;floatTxt(a.x,a.z,'-'+Math.round(dmg),'#ffd');sfx.hit();if(a.K.beh!=='passive')a.agro=true;else{a.state='flee';a.t=3;}if(a.hp<=0)killAnimal(a,true);}
 
+
+// ---------- Release 15: Decorative base rating ----------
+const VALMAP={iron_wall:9,turret:11,watchtower:10,guardian_totem:10,thorn_wall:8,flame_trap:8,gate:6,wall:5,fence:3,spike_barricade:5,bear_trap:5,alarm_bell:5,bench:4,chest:4,bed:4,tent:5,campfire:6,table:3,rug:2,flower_pot:3,sign_post:2,path_stones:1,lamp_post:5,torch_post:3,scarecrow:4,tar_pit:4,trench:4,trap:4};
+function rateBase(list){list=list||structs;const mine=list.filter(x=>!x.perm&&x.type!=='healing_tree'&&x.type!=='cave_rock');const n=t=>mine.filter(x=>x.type===t).length;
+ const decor=['rug','table','flower_pot','sign_post','path_stones'];const decorN=decor.reduce((a,t)=>a+n(t),0);const variety=new Set(mine.map(x=>x.type)).size;
+ const lights=n('lamp_post')+n('torch_post');const fireLv=(list.find(x=>x.main)||mine.find(x=>x.type==='campfire')||{lvl:1}).lvl||1;
+ const looksRaw=decorN*1.1+Math.min(6,variety)*0.9+n('flower_pot')*1.2+lights*1.1+n('path_stones')*.5+(fireLv-1)*.8;
+ const defRaw=n('iron_wall')*1.6+n('thorn_wall')*1.5+n('wall')*1.2+n('gate')*1.2+n('fence')*.6+n('spike_barricade')*1.1+n('turret')*2.2+n('flame_trap')*1.4+n('bear_trap')*1.1+n('watchtower')*1.6+n('trap')*.8+n('tar_pit')*.6+n('trench')*.6+n('scarecrow')*.5+n('alarm_bell')*.6+(fireLv-1)*.9;
+ let value=mine.reduce((a,x)=>a+(VALMAP[x.type]||2),0)+Math.floor(coins/60)+TCH.filter(c=>c.open).length*4+treeInstalled.length*5;
+ const sc=v=>Math.max(1,Math.min(10,Math.round(v)));
+ const looks=sc(looksRaw*.45),defense=sc(defRaw*.55),val=sc(value*.09);
+ const stars=v=>'★'.repeat(Math.round(v/2))+'☆'.repeat(5-Math.round(v/2));
+ return{looks,defense,value:val,total:looks+defense+val,stars,
+  lines:[`🌸 <b>Looks ${looks}/10</b> ${stars(looks)} — ${decorN} decor items, ${variety} different structures, ${n('flower_pot')} flower pots, ${lights} lights, ${n('path_stones')} path stones, campfire Lv${fireLv}`,
+   `🛡️ <b>Defense ${defense}/10</b> ${stars(defense)} — ${n('iron_wall')+n('wall')+n('thorn_wall')} walls, ${n('gate')} gates, ${n('turret')} turrets, ${n('flame_trap')+n('bear_trap')+n('trap')} traps, ${n('watchtower')} watchtowers, campfire Lv${fireLv}`,
+   `💰 <b>Value ${val}/10</b> ${stars(val)} — ${mine.length} structures placed, ${TCH.filter(c=>c.open).length} treasure chests opened, ${coins} coins, ${treeInstalled.length}/4 tree parts`,
+   `🏆 <b>Total ${looks+defense+val}/30</b> ${stars(Math.round((looks+defense+val)/3))}`],
+  awards:[looks>=8?'🌸 Village-like charm':looks>=5?'🏡 Cosy camp':'⛺ Rustic start',defense>=8?'🏰 Fortress grade':defense>=5?'🛡️ Well guarded':'🧱 Needs more walls',val>=8?'👑 Treasure hoard':val>=5?'💰 Comfortable':'🪙 Getting started']};}
+function showRating(){const r=rateBase();MP.myRating=r;let h=r.lines.join('<br>')+'<br><br>🎖️ '+r.awards.join(' · ');
+ if(MP.on&&MP.themRating){const t=MP.themRating;h+=`<br><br>⚔️ <b>Build-off result:</b> You ${r.total}/30 vs ${MP.themName} ${t.total}/30 — <b>${r.total>t.total?'🏆 YOU WIN!':r.total<t.total?'😢 '+MP.themName+' wins':'🤝 It’s a tie!'}</b>`;}
+ else if(MP.on)h+='<br><br>⏳ Waiting for your rival’s day-10 rating…';
+ $('rateTitle').textContent=MODE==='decorative'?'🏆 Base Rating — '+(day>=11?'Day 10 complete!':'Early rating'):'🏆 Base Rating';
+ $('rateBody').innerHTML=h;$('rateP').classList.remove('hidden');paused=true;sfx.win();
+ if(MP.on)MP.send({t:'rating',rating:{looks:r.looks,defense:r.defense,value:r.value,total:r.total},name:CHAR.name});}
+$('rateClose').onclick=()=>{$('rateP').classList.add('hidden');paused=false;};
+$('pRate').onclick=()=>{showRating();};
+// ---------- Release 15: multiplayer (PeerJS, host-authoritative score/session) ----------
+const MP={on:false,host:false,mock:false,peer:null,conn:null,code:'',remote:null,remoteName:'Friend',themName:'Friend',deaths:0,finished:false,firstFinisher:null,myRating:null,themRating:null,sent:[],
+ score:{boss:0,parts:0,rescues:0,deaths:0},them:{boss:0,parts:0,rescues:0,deaths:0},
+ send(o){this.sent.push(o);if(this.conn&&this.conn.open)this.conn.send(o);},
+ progress(){this.score={boss:Object.keys(bossDone).filter(k=>bossDone[k]).length,parts:treeInstalled.length,rescues:KIDS.filter(k=>kidState[k.id].stage==='rescued').length,deaths:this.deaths};this.hud();this.send({t:'score',score:this.score,name:CHAR.name});
+  if(MODE==='discovery'&&this.on&&this.score.boss>=4&&this.score.parts>=4&&!this.finished){this.finished=true;this.firstFinisher=this.firstFinisher||'me';this.send({t:'win',deaths:this.deaths,name:CHAR.name});showMpWin();}},
+ hud(){const el=$('mpScore');if(!el)return;if(!this.on||MODE!=='discovery'){el.classList.add('hidden');return;}el.classList.remove('hidden');
+  el.innerHTML=`🏁 <b>Race — first to 4 bosses + healed tree</b><br>👤 ${CHAR.name}: 💀${this.score.boss}/4 🌳${this.score.parts}/4 🧒${this.score.rescues} ☠️${this.score.deaths}<br>👥 ${this.themName}: 💀${this.them.boss}/4 🌳${this.them.parts}/4 🧒${this.them.rescues} ☠️${this.them.deaths}`;},
+ snapshot(){return structs.filter(x=>!x.perm).map(x=>({type:x.type,x:x.x,z:x.z,rot:x.rot,tier:x.tier,lvl:x.lvl,fuel:x.fuel,main:x.main}));},
+ applyStruct(d){if(!PLACE.includes(d.type)&&d.type!=='campfire')return;if(structs.some(x=>x.type===d.type&&Math.hypot(x.x-d.x,x.z-d.z)<1.2))return;placeStruct(d.type,d.x,d.z,{rot:d.rot,tier:d.tier,lvl:d.lvl,fuel:d.fuel,main:d.main});},
+ handle(d){if(!d||!d.t)return;
+  if(d.t==='hello'){this.themName=d.name||'Friend';this.remoteName=this.themName;if(!this.host&&d.host){if(d.mode&&d.mode!==MODE){MODE=d.mode;updModeCards();toast('🌐 Host is playing '+MODE+' mode — matched!',3);}}
+   if(this.host)this.send({t:'snapshot',structs:this.snapshot()});this.progress();toast('🌐 '+this.themName+' is here! Wave with the emote buttons 👋',3);}
+  else if(d.t==='snapshot'){for(const sd of d.structs||[])this.applyStruct(sd);if(!this.host)this.send({t:'snapshot',structs:this.snapshot()});}
+  else if(d.t==='pos'){if(!this.remote){const fig=makeHuman(d.look||{shirt:0xd84a20});scene.add(fig);this.remote={fig,x:d.x,z:d.z};toast('👥 '+this.themName+' appeared!',2);}
+   this.remote.x=d.x;this.remote.z=d.z;this.remote.fig.position.set(d.x,H(d.x,d.z)+(d.jy||0),d.z);this.remote.fig.rotation.y=d.dir||0;rigTick(this.remote.fig,.05);}
+  else if(d.t==='emote'){if(this.remote)floatTxt(this.remote.x,this.remote.z,d.e,'#fff');toast(this.themName+' '+d.e,1.5);}
+  else if(d.t==='struct')this.applyStruct(d.s);
+  else if(d.t==='unstruct'){const i=structs.findIndex(x=>!x.perm&&x.type===d.ty&&Math.hypot(x.x-d.x,x.z-d.z)<2);if(i>=0){scene.remove(structs[i].mesh);structs.splice(i,1);}}
+  else if(d.t==='score'){this.them=d.score;this.themName=d.name||this.themName;this.hud();}
+  else if(d.t==='win'){this.firstFinisher=this.firstFinisher||'them';showMpWin();}
+  else if(d.t==='rating'){this.themRating=d.rating;this.themName=d.name||this.themName;if(!$('rateP').classList.contains('hidden'))showRating();else toast('🏆 '+this.themName+'’s base scored '+d.rating.total+'/30 — open your rating (Pause) to compare!',4);}
+  else if(d.t==='bye'){mpDisconnect('🌐 '+this.themName+' left the game. You keep playing solo.');}},
+ inject(d){this.handle(d);},
+ mockConnect(){this.on=true;this.mock=true;this.conn={open:true,send:o=>this.sent.push(o)};this.hud();updEmoteBar();return true;}};
+function updEmoteBar(){const b=$('emoteBar');if(b)b.classList.toggle('hidden',!MP.on);}
+function mpDisconnect(msg){if(MP.remote){scene.remove(MP.remote.fig);MP.remote=null;}MP.on=false;MP.conn=null;MP.hud();updEmoteBar();if(msg)toast(msg,4);const st=$('mpStatus');if(st)st.textContent='Disconnected — playing solo.';}
+function showMpWin(){const meFirst=MP.firstFinisher!=='them';const fewer=MP.score.deaths<=MP.them.deaths;
+ $('rateTitle').textContent='🏁 Race finished!';$('rateBody').innerHTML=`🏆 <b>${meFirst?CHAR.name:MP.themName} beat the game first</b> (4 bosses + Tree of Healing)!<br>☠️ Deaths — ${CHAR.name}: ${MP.score.deaths} · ${MP.themName}: ${MP.them.deaths}<br>👑 <b>Fewest-deaths honour: ${MP.score.deaths<MP.them.deaths?CHAR.name:MP.score.deaths>MP.them.deaths?MP.themName:'tied!'}</b><br>💀 Bosses ${MP.score.boss}–${MP.them.boss} · 🌳 Tree parts ${MP.score.parts}–${MP.them.parts} · 🧒 Rescues ${MP.score.rescues}–${MP.them.rescues}`;
+ $('rateP').classList.remove('hidden');paused=true;sfx.win();}
+let mpPosT=0;
+function mpTick(dt){if(!MP.on)return;mpPosT-=dt;if(mpPosT<=0){mpPosT=.15;MP.send({t:'pos',x:P.x,z:P.z,dir:P.dir,jy:P.jy,look:charLook(),name:CHAR.name});}}
+function mpSetupConn(conn){MP.conn=conn;conn.on('open',()=>{MP.on=true;updEmoteBar();const st=$('mpStatus');if(st)st.textContent='✅ Connected! Starting…';
+  if(!running)startGame(false);if(!MP.host){/* guest base ~40m east */setTimeout(()=>{if(!structs.some(x=>x.main&&Math.hypot(x.x-44,x.z-0)<6)){const f=placeStruct('campfire',44,-1.5,{main:1,fuel:60});P.x=44;P.z=3;P.spawn=[44,3];MP.send({t:'snapshot',structs:MP.snapshot()});toast('🏕️ Your base is 40 m east of '+MP.themName+'’s — go visit!',4);}},800);}
+  MP.send({t:'hello',name:CHAR.name,look:charLook(),mode:MODE,host:MP.host});MP.hud();});
+ conn.on('data',d=>MP.handle(d));conn.on('close',()=>mpDisconnect());conn.on('error',()=>mpDisconnect('🌐 Connection error — playing solo.'));}
+function mpCreate(){const st=$('mpStatus');if(typeof Peer==='undefined'){st.textContent='⚠️ Multiplayer library did not load (needs internet). Solo still works!';return;}
+ MP.code='';const abc='ABCDEFGHJKMNPQRSTUVWXYZ';for(let i=0;i<4;i++)MP.code+=abc[Math.floor(Math.random()*abc.length)];
+ MP.peer=new Peer('emberfall-'+MP.code);MP.host=true;st.textContent='⏳ Creating room…';
+ MP.peer.on('open',()=>{st.innerHTML='🏠 Room code: <b style="font-size:20px">'+MP.code+'</b> — share it! Starting your game; your friend can join any time.';if(!running)startGame(false);});
+ MP.peer.on('connection',c=>mpSetupConn(c));MP.peer.on('error',e=>{st.textContent='⚠️ '+(e.type==='unavailable-id'?'That code just got taken — Create again!':'Connection trouble: '+e.type);});}
+function mpJoin(){const st=$('mpStatus');const code=($('roomCode').value||'').trim().toUpperCase();if(code.length!==4){st.textContent='Type the 4-letter room code first!';return;}
+ if(typeof Peer==='undefined'){st.textContent='⚠️ Multiplayer library did not load (needs internet). Solo still works!';return;}
+ MP.host=false;MP.code=code;MP.peer=new Peer();st.textContent='⏳ Joining '+code+'…';
+ MP.peer.on('open',()=>{const c=MP.peer.connect('emberfall-'+code,{reliable:true});mpSetupConn(c);setTimeout(()=>{if(!MP.on)st.textContent='⚠️ No room '+code+' found — check the code, and that your friend created it first.';},9000);});
+ MP.peer.on('error',e=>{st.textContent='⚠️ '+(e.type==='peer-unavailable'?'No room with that code (yet).':'Connection trouble: '+e.type);});}
+$('bHost').onclick=mpCreate;$('bJoin').onclick=mpJoin;
+document.querySelectorAll('#emoteBar button').forEach(b=>b.onclick=()=>{if(!MP.on)return;floatTxt(P.x,P.z,b.dataset.emote,'#fff');MP.send({t:'emote',e:b.dataset.emote});});
+// mode cards
+function updModeCards(){const d=MODE==='discovery';$('modeDisc').classList.toggle('on',d);$('modeDeco').classList.toggle('on',!d);
+ $('modeDesc').textContent=d?'🏕️ Discovery: survive, rescue kids, heal the tree, beat 4 bosses → Crown.':'🏡 Decorative: relaxed building, no starvation, rated Looks/Defense/Value at the end of day 10.';
+ const pr=$('pRate');if(pr)pr.style.display=MODE==='decorative'?'':'none';}
+$('modeDisc').onclick=()=>{MODE='discovery';localStorage.setItem('cq_mode',MODE);updModeCards();};
+$('modeDeco').onclick=()=>{MODE='decorative';localStorage.setItem('cq_mode',MODE);updModeCards();};
+
 // ---------- telegraphs & projectiles ----------
 const TELE=[],PROJ=[],BFX=[];
 const teleMat=new THREE.MeshBasicMaterial({color:0xff2a2a,transparent:true,opacity:.35,depthWrite:false});
@@ -603,7 +684,7 @@ function talkKid(e){const k=e.def,st=kidState[k.id];const n={name:k.name,v:{name
  if(st.stage==='rescued')return say(n,'You saved me! Everyone at '+k.village+' says you are a hero.',[{l:'👋 Stay safe',f:endTalk}]);
  if(st.stage==='follow')return say(n,'I am right behind you! Just… not too close to anything with teeth.',[{l:'🏃 Let’s go!',f:endTalk},{l:'🙈 Wait here a sec',f:()=>{st.stage='wait';save();endTalk();}}]);
  say(n,k.line+'\n\nPlease — will you walk me out of this cave? I will follow you. If something scary comes close I might run back and hide…',[ {l:'🤝 Follow me, '+k.name+'!',f:()=>{st.stage='follow';st.hinted=1;sfx.win();toast('🧒 '+k.name+' is following you — lead them out of the cave into daylight!',3);save();endTalk();}},{l:'Not yet — stay hidden',f:endTalk}]);}
-function rescueKid(e){const k=e.def,st=kidState[k.id];st.stage='rescued';e.goneT=6;add(k.reward,1);sfx.win();equipVisual();
+function rescueKid(e){MP.progress();const k=e.def,st=kidState[k.id];st.stage='rescued';e.goneT=6;add(k.reward,1);sfx.win();equipVisual();
  toast('🎉 <b>'+k.name+' is safe!</b> Back in '+k.village+' they will tell everyone what you did.<br>Reward: '+ITEMS[k.reward],5);
  floatTxt(e.x,e.z,'🎉 SAFE!','#7fe870');say({name:k.name,v:{name:k.village},look:k.look,pers:k.pers},'DAYLIGHT! Real actual daylight! Thank you thank you! Take this — I was saving it for a hero. ('+ITEMS[k.reward]+')',[{l:'🎁 You’re safe now',f:endTalk}]);save();}
 function updKids(dt){for(const e of KIDENTS){const k=e.def,st=kidState[k.id];if(!st)continue;
@@ -635,7 +716,7 @@ function updTreeLook(){const n=treeInstalled.length;const cols=[0x8a9284,0x86b36
  for(const m of treeCanopy){m.material.color.setHex(cols[n]);m.material.emissive=new THREE.Color(n>=4?0xcc9900:n>=2?0x1d5c1a:0x000000);m.material.emissiveIntensity=n>=4?.45:.5;}
  if(treeBlossoms)treeBlossoms.visible=n>=2;if(treeFruit)treeFruit.visible=n>=4;if(treeGlow)treeGlow.intensity=n*14;if(treeOrb)treeOrb.visible=claimableParts().length>0;}
 function treeBurst(){for(let i=0;i<22;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(.16,.16,.16),new THREE.MeshBasicMaterial({color:[0x7fe870,0xffb7d5,0xffd94d,0x46bd3f][i%4]}));m.position.set(TREE.x,H(TREE.x,TREE.z)+2,TREE.z);scene.add(m);const a=rnd(0,6.28);BFX.push({m,t:rnd(.7,1.4),vx:Math.sin(a)*rnd(1,4),vy:rnd(3,6.5),vz:Math.cos(a)*rnd(1,4)});}}
-function installPart(part){add(part,-1);treeInstalled.push(part);updTreeLook();treeBurst();shake=.5;sfx.win();tone(523,.4,'sine',.12);setTimeout(()=>tone(659,.4,'sine',.12),160);setTimeout(()=>tone(784,.6,'sine',.12),320);
+function installPart(part){add(part,-1);treeInstalled.push(part);MP.progress();updTreeLook();treeBurst();shake=.5;sfx.win();tone(523,.4,'sine',.12);setTimeout(()=>tone(659,.4,'sine',.12),160);setTimeout(()=>tone(784,.6,'sine',.12),320);
  if(part==='frost_root'){P.maxHp+=20;P.hp=Math.min(P.maxHp,P.hp+20);}
  for(let i=0;i<2;i++){const a=spawnAnimal(Math.random()<.5?'deer':'rabbit',TREE.x+rnd(-8,8),TREE.z+rnd(-8,8));}
  toast('🌳 <b>'+ITEMS[part]+' installed!</b> The Tree of Healing shivers, new leaves unfurl…<br>Bonus: '+PART_BONUS[part]+'<br>Tree restored: '+treeInstalled.length+'/4',4.5);
@@ -684,7 +765,7 @@ function updBoss(dt){if(!boss){for(const B of BOSSES){if(bossDone[B.id])continue
  b.contact-=dt;b.x=clamp(b.x,B.x-18,B.x+18);b.z=clamp(b.z,B.z-18,B.z+18);
  b.fig.position.set(b.x,H(b.x,b.z),b.z);b.fig.rotation.y=b.act==='charge'?b.cAng:ang;}
 function hitBoss(d){const b=boss;if(!b||!b.alive)return;b.hp-=d;if(bestWeapon()==='lava_sword')b.burnT=3;floatTxt(b.x,b.z,'-'+Math.round(d),'#f66');sfx.hit();
- if(b.hp<=0){b.alive=false;b.deadT=4;rigOnce(b.fig,'death',1.5);bossDone[b.B.id]=1;add(b.B.trophy,1);const got=[ITEMS[b.B.trophy]];for(const k in b.B.loot){add(k,b.B.loot[k]);got.push('+'+b.B.loot[k]+' '+ITEMS[k]);}
+ if(b.hp<=0){b.alive=false;b.deadT=4;rigOnce(b.fig,'death',1.5);bossDone[b.B.id]=1;MP.progress();add(b.B.trophy,1);const got=[ITEMS[b.B.trophy]];for(const k in b.B.loot){add(k,b.B.loot[k]);got.push('+'+b.B.loot[k]+' '+ITEMS[k]);}
   {const part=PART_FOR_BOSS[b.B.id];if(part&&!treeInstalled.includes(part)&&!has(part)){add(part,1);got.push('🌳 Tree Part: '+ITEMS[part]+' — take it to the Tree of Healing!');}}
   for(const m of animals)if(m.minion&&m.alive)killAnimal(m,false);$('bossbar').classList.add('hidden');sfx.win();toast('🏆 '+b.B.name+' defeated!<br>'+got.join('  '),5);
   if(BOSSES.every(x=>bossDone[x.id])&&!has('crown')){add('crown',1);setTimeout(()=>{$('win').classList.remove('hidden');paused=true;},2500);}save();}}
@@ -735,9 +816,10 @@ function pBlocked(x,z){return blocked(x,z,.4,P.jy)&&!blocked(P.x,P.z,.4,P.jy);}
 // ---------- player ----------
 const P={jy:0,vy:0,x:0,z:3,dir:Math.PI,hp:100,maxHp:100,hearts:0,torchOn:true,hunger:100,thirst:100,temp:100,fig:null,cd:0,dead:false,water:0,spawn:[0,3]};
 let dayT=40,day=1,paused=true,running=false,shake=0,toolHeld=null;
+let MODE=['discovery','decorative'].includes(localStorage.getItem('cq_mode'))?localStorage.getItem('cq_mode'):'discovery',ratedShown=false;
 const DAY=300;const phase=()=>(dayT%DAY)/DAY;const night=()=>{const p=phase();return p>.72||p<.04;};
 function hurtPlayer(d,src){if(P.dead||paused)return;d*=1-armorPct();if(P.blocking){d*=has('guard_shield')?.18:.35;floatTxt(P.x,P.z,'🔰 block','#9cf');}P.hp-=d;P.hurtT=.3;sfx.hurt();floatTxt(P.x,P.z,'-'+Math.round(d),'#f44');if(P.hp<=0)die();}
-function die(){P.dead=true;P.hp=0;rigOnce(P.fig,'death',1);toast('💀 You fainted… waking at '+(P.spawn[0]===0&&P.spawn[1]===3?'the forest clearing':'your tent'),3);const lost=Math.floor((inv.raw_meat||0)/2);if(lost)add('raw_meat',-lost);
+function die(){P.dead=true;P.hp=0;MP.deaths++;MP.progress();rigOnce(P.fig,'death',1);toast('💀 You fainted… waking at '+(P.spawn[0]===0&&P.spawn[1]===3?'the forest clearing':'your tent'),3);const lost=Math.floor((inv.raw_meat||0)/2);if(lost)add('raw_meat',-lost);
  setTimeout(()=>{P.dead=false;P.x=P.spawn[0];P.z=P.spawn[1];P.hp=Math.round(P.maxHp*.7);P.hunger=Math.max(P.hunger,50);P.thirst=Math.max(P.thirst,50);P.temp=100;rigReset(P.fig);rigSet(P.fig,'idle');},2600);}
 function equipVisual(){const w=bestWeapon(),t=lightsOn()&&(has('torch')||has('lantern'))&&P.torchOn?'torch':(w==='fists'?null:w);if(t===toolHeld)return;toolHeld=t;const h=P.fig.userData.rig.hand;if(P.tool){h.remove(P.tool);}P.tool=null;if(t){P.tool=toolMesh(t);h.add(P.tool);}}
 
@@ -836,7 +918,7 @@ function useSlot(i){const s=slots[i];if(!s||P.dead)return;const k=s.k;
  if(k==='repair_kit'){let n=0;for(const st of structs)if(DEF[st.type]&&st.hp<DEF[st.type].hp&&Math.hypot(st.x-P.x,st.z-P.z)<14){st.hp=DEF[st.type].hp;n++;}if(!n)return toast('No damaged defences within 14 m');addItem(k,-1);sfx.craft();return toast('🧰 Repaired '+n+' defences!');}
  if(k==='torch'||k==='lantern'){P.torchOn=!P.torchOn;toolHeld='?';return toast((k==='torch'?'Torch ':'Lantern ')+(P.torchOn?'on':'off'));}
  if(k==='wood'){const f=nearestStruct('campfire',3.5);if(f)return fuelFire(f);}
- if(PLACE.includes(k)){if(P.tower)return toast('Climb down first');const pp=placePos(k),x=pp.x,z=pp.z;if(!placeOk(k,pp))return toast('No room to place that here');addItem(k,-1);const st=placeStruct(k,x,z,{rot:pp.rot,tier:k==='bench'?1:undefined,fuel:k==='campfire'?50:undefined});if(k==='bed'||k==='tent')P.spawn=[x+1.5,z+1.5];sfx.craft();toast('Placed '+nm(k));save();return;}
+ if(PLACE.includes(k)){if(P.tower)return toast('Climb down first');const pp=placePos(k),x=pp.x,z=pp.z;if(!placeOk(k,pp))return toast('No room to place that here');addItem(k,-1);const st=placeStruct(k,x,z,{rot:pp.rot,tier:k==='bench'?1:undefined,fuel:k==='campfire'?50:undefined});MP.send({t:'struct',s:{type:k,x,z,rot:pp.rot,tier:st.tier,lvl:st.lvl}});if(k==='bed'||k==='tent')P.spawn=[x+1.5,z+1.5];sfx.craft();toast('Placed '+nm(k));save();return;}
  toast(nm(k));}
 function fuelFire(f){if(!has('wood'))return toast('You need logs to fuel the fire');if(f.fuel>=flv(f).maxF)return toast('The fire is roaring already!');addItem('wood',-1);f.fuel=Math.min(flv(f).maxF,(f.fuel||0)+14);sfx.craft();toast('🔥 Fire fuel '+Math.round(ffrac(f)*100)+'%  (safe radius '+Math.round(fireR(f))+'m)',1.6);}
 const FLV=[null,
@@ -940,8 +1022,8 @@ $('quit').onclick=()=>{if(confirm('Save and quit to the main menu?')){try{MUS.se
 $('winOk').onclick=()=>{$('win').classList.add('hidden');paused=false;};
 
 // ---------- save ----------
-function save(){if(!running&&!P.fig)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify({v:1,p:{x:P.x,z:P.z,hp:P.hp,hunger:P.hunger,thirst:P.thirst,temp:P.temp,water:P.water,spawn:P.spawn},slots,coins,selHot,chest,structs:structs.filter(s=>!s.perm).map(s=>({type:s.type,x:s.x,z:s.z,rot:s.rot,tier:s.tier,fuel:s.fuel,main:s.main,lvl:s.lvl,hp:s.hp,open:s.open,ammo:s.ammo})),dead:[...deadRes],quests,revealed,kills,bossDone,dayT,day,raidDay,char:CHAR,stepsOff,ftDay,dtDay,kidState,treeInstalled,fruitAt,tchOpen:TCH.filter(c=>c.open).map(c=>c.id),tchSeen:TCH.filter(c=>c.seen).map(c=>c.id)}));}catch(e){}}
-function load(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY));if(!d)return false;Object.assign(P,d.p);P.maxHp=P.maxHp||100;if(d.slots)slots=d.slots.concat(new Array(NSLOT).fill(null)).slice(0,NSLOT);else if(d.inv){const L={axe:'stone_axe',pickaxe:'stone_pickaxe',obsidian_blade:'obsidian_sword'};for(const k in d.inv)addItem(L[k]||k,d.inv[k]);}coins=d.coins||0;selHot=d.selHot||0;chest=d.chest||{};raidDay=d.raidDay||0;if(d.char){CHAR=d.char;localStorage.setItem('cq_charprofile',JSON.stringify(CHAR));}stepsOff=!!d.stepsOff;ftDay=d.ftDay||0;dtDay=d.dtDay||0;if(d.kidState)for(const id in kidState)if(d.kidState[id])kidState[id]={...kidState[id],...d.kidState[id]};treeInstalled=d.treeInstalled||[];fruitAt=d.fruitAt||0;for(const c of TCH){if((d.tchOpen||[]).includes(c.id))openLook(c);if((d.tchSeen||[]).includes(c.id))c.seen=1;}
+function save(){if(!running&&!P.fig)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify({v:1,p:{x:P.x,z:P.z,hp:P.hp,hunger:P.hunger,thirst:P.thirst,temp:P.temp,water:P.water,spawn:P.spawn},slots,coins,selHot,chest,structs:structs.filter(s=>!s.perm).map(s=>({type:s.type,x:s.x,z:s.z,rot:s.rot,tier:s.tier,fuel:s.fuel,main:s.main,lvl:s.lvl,hp:s.hp,open:s.open,ammo:s.ammo})),dead:[...deadRes],quests,revealed,kills,bossDone,dayT,day,raidDay,char:CHAR,stepsOff,ftDay,dtDay,mode:MODE,ratedShown,kidState,treeInstalled,fruitAt,tchOpen:TCH.filter(c=>c.open).map(c=>c.id),tchSeen:TCH.filter(c=>c.seen).map(c=>c.id)}));}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY));if(!d)return false;Object.assign(P,d.p);P.maxHp=P.maxHp||100;if(d.slots)slots=d.slots.concat(new Array(NSLOT).fill(null)).slice(0,NSLOT);else if(d.inv){const L={axe:'stone_axe',pickaxe:'stone_pickaxe',obsidian_blade:'obsidian_sword'};for(const k in d.inv)addItem(L[k]||k,d.inv[k]);}coins=d.coins||0;selHot=d.selHot||0;chest=d.chest||{};raidDay=d.raidDay||0;if(d.char){CHAR=d.char;localStorage.setItem('cq_charprofile',JSON.stringify(CHAR));}stepsOff=!!d.stepsOff;ftDay=d.ftDay||0;dtDay=d.dtDay||0;if(d.mode)MODE=d.mode;ratedShown=!!d.ratedShown;updModeCards();if(d.kidState)for(const id in kidState)if(d.kidState[id])kidState[id]={...kidState[id],...d.kidState[id]};treeInstalled=d.treeInstalled||[];fruitAt=d.fruitAt||0;for(const c of TCH){if((d.tchOpen||[]).includes(c.id))openLook(c);if((d.tchSeen||[]).includes(c.id))c.seen=1;}
  for(const s of d.structs||[]){const {type,x,z,...o}=s;placeStruct(type,x,z,o);}if(!structs.some(s=>s.main))placeStruct('campfire',0,-1.5,{main:1,fuel:60});for(const id of d.dead||[]){const o=RES[id];if(o){o.alive=false;hideRes(o);deadRes.add(id);o.respawnAt=performance.now()/1000+300;}}
  quests=d.quests||{};revealed=d.revealed||{};kills=d.kills||{};bossDone=d.bossDone||{};dayT=d.dayT||40;day=d.day||1;return true;}catch(e){return false;}}
 setInterval(()=>{if(running)save();},10000);addEventListener('visibilitychange',()=>{if(document.hidden&&running)save();});addEventListener('pagehide',()=>running&&save());
@@ -1068,17 +1150,17 @@ function update(dt){const b=biomeAt(P.x,P.z);
   if(b==='snow')P.temp+=has('cold_gear')?(fire?8:1)*dt:(fire?10:(night()?-5:-3.5)*(has('ice_ring')?.45:1)*((P.warmT>0)?.35:1))*dt;
   else if(b==='lava')P.temp+=(has('heat_gear')||has('ember_armor'))?1*dt:-5*((P.fireT>0)?.25:1)*dt;else if(b==='desert')P.temp+=(has('heat_gear')||has('ember_armor'))?1*dt:(night()?2:-2)*((P.fireT>0)?.4:1)*dt;else P.temp+=6*dt;
   P.temp=clamp(P.temp,0,100);P.hunger=clamp(P.hunger,0,100);P.thirst=clamp(P.thirst,0,100);
-  if(P.hunger<=0)hurtTick(1.2*dt,'starving');if(P.thirst<=0)hurtTick(1.6*dt,'dehydrated');if(P.temp<=0)hurtTick(3*dt,b==='snow'?'freezing! Craft cold gear':'overheating! Craft heat gear');
+  if(MODE!=='decorative'){if(P.hunger<=0)hurtTick(1.2*dt,'starving');if(P.thirst<=0)hurtTick(1.6*dt,'dehydrated');}if(P.temp<=0)hurtTick(3*dt,b==='snow'?'freezing! Craft cold gear':'overheating! Craft heat gear');
   if(inLava(P.x,P.z))hurtTick(((has('heat_gear')||has('ember_armor'))?6:18)*((P.fireT>0)?.3:1)*dt,'in LAVA!');
   if(P.hunger>50&&P.thirst>50&&P.temp>30&&P.hp<P.maxHp)P.hp=Math.min(P.maxHp,P.hp+(fire?1.5:.5)*(has('sun_amulet')?3:1)*dt+(has('heartwood_charm')?.3:0)*dt+(treeInstalled.includes('vine_seed')?.35:0)*dt);}
  {const lf=!P.dead&&litFire(P.x,P.z);if(lf&&(lf.lvl||1)>=3&&P.hp<P.maxHp)P.hp=Math.min(P.maxHp,P.hp+(((lf.lvl||1)>=5?4:2)+(treeInstalled.length>=4?3:0))*dt);}
  musT-=dt;if(musT<=0){musT=.5;MUS.set(pickTheme(b));}
  // world
- dayT+=dt;if(Math.floor((dayT-dt)/DAY)<Math.floor(dayT/DAY)){day++;toast('☀️ Day '+day);}
+ dayT+=dt;if(Math.floor((dayT-dt)/DAY)<Math.floor(dayT/DAY)){day++;toast('☀️ Day '+day);if(MODE==='decorative'&&day>=11&&!ratedShown){ratedShown=true;save();setTimeout(()=>showRating(),600);}}
  {const nn=night();if(nn&&!wasNight)onDusk();else if(!nn&&wasNight)onDawn();wasNight=nn;}updPosts();tickTreasure(dt);tickRaid(dt);updDefenses(dt);updGhost();
  manageAnimals(dt);updAnimals(dt);updBoss(dt);updFx(dt);
  regrowT-=dt;if(regrowT<=0){regrowT=5;const now=performance.now()/1000;for(const id of [...deadRes]){const o=RES[id];if(o.respawnAt&&now>o.respawnAt&&Math.hypot(o.x-P.x,o.z-P.z)>20){showRes(o);deadRes.delete(id);}}}
- updDusk();updNPCs(dt);updTraders(dt);updFires(dt);updKids(dt);if(treeOrb){treeOrb.rotation.y+=dt*2;treeOrb.visible=claimableParts().length>0;}
+ updDusk();updNPCs(dt);updTraders(dt);updFires(dt);updKids(dt);mpTick(dt);if(treeOrb){treeOrb.rotation.y+=dt*2;treeOrb.visible=claimableParts().length>0;}
  // lighting
  const ph=phase(),sunA=ph*Math.PI*2;const dl=clamp(Math.sin(sunA)*1.6+.25,0,1);sun.intensity=.15+2.2*dl;hemi.intensity=.18+.75*dl;
  sun.position.set(P.x+Math.cos(sunA)*40,10+Math.max(.2,Math.sin(sunA))*50,P.z+20);sun.target.position.set(P.x,0,P.z);
@@ -1234,7 +1316,7 @@ const breakNeedsConfirm=s=>!!s.main||(s.type==='bench'&&(s.tier||1)>1)||(s.type=
 let breakConfirm=null;
 function askBreak(s){breakConfirm={s,until:performance.now()+7000};const rf=breakRefund(s);toast('🔨 Break <b>'+nm(s.type)+'</b>?<br>Refund: '+(Object.entries(rf).map(([k,n])=>n+' '+nm(k).replace(/^\S+ /,'')).join(', ')||'nothing')+'<br><b>[B] yes · [Esc] no</b>',4);tone(220,.15,'square',.12);}
 function doBreak(s){if(!s||!structs.includes(s))return false;const rf=breakRefund(s),name=nm(s.type);if(P.tower===s)climbDown();
- const i=structs.indexOf(s);structs.splice(i,1);scene.remove(s.mesh);if(s.ring){scene.remove(s.ring);s.ring=null;}
+ const i=structs.indexOf(s);structs.splice(i,1);scene.remove(s.mesh);if(s.ring){scene.remove(s.ring);s.ring=null;}MP.send({t:'unstruct',ty:s.type,x:s.x,z:s.z});
  for(const k in rf)add(k,rf[k]);for(let n=0;n<16;n++){const m=new THREE.Mesh(new THREE.BoxGeometry(.13,.13,.13),new THREE.MeshBasicMaterial({color:[0x9a6a3a,0x8a8a86,0xd8c8a0,0x6a4a2a][n%4]}));m.position.set(s.x,H(s.x,s.z)+.8,s.z);scene.add(m);const a=rnd(0,6.28);BFX.push({m,t:rnd(.5,.9),vx:Math.sin(a)*rnd(1,3.4),vy:rnd(2.4,5),vz:Math.cos(a)*rnd(1,3.4)});}
  tone(130,.22,'sawtooth',.2,45);setTimeout(()=>tone(90,.25,'square',.14,40),60);sfx.chop();floatTxt(s.x,s.z,'🔨 +'+(Object.values(rf).reduce((a,b)=>a+b,0))+' mats','#ffd27a');
  toast('🔨 Broke '+name+'<br>Refunded: '+(Object.entries(rf).map(([k,n])=>n+' '+nm(k).replace(/^\S+ /,'')).join(', ')||'nothing'),2.5);save();return true;}
@@ -1254,7 +1336,7 @@ function updMoveGhost(){const show=moving&&true;for(const id of ['bPlace','bCanc
  moveRing.position.set(p.x,H(p.x,p.z)+.14,p.z);const rr=(SEG[moving.s.type]?1.25:(SR[moving.s.type]??.6)+.45);moveRing.scale.setScalar(rr);moveRingMat.color.setHex(ok?0x2bff5a:0xff2020);moveRingMat.opacity=.75+.25*Math.sin(performance.now()/180);}
 function restoreMove(x,z,rot){const s=moving.s;const ns=placeStruct(s.type,x,z,{rot,tier:s.tier,fuel:s.fuel,lvl:s.lvl,hp:s.hp,open:s.open,ammo:s.ammo});if(s.type==='bench'&&ns.tier!==s.tier){ns.tier=s.tier;benchLook(ns);}cleanupMove();save();return ns;}
 function cleanupMove(){if(moveGhost)scene.remove(moveGhost);if(moveRing)scene.remove(moveRing);moveGhost=moveRing=null;moving=null;for(const id of ['bPlace','bCancel']){const el=$(id);if(el)el.style.display='none';}}
-function placeMove(){if(!moving)return false;if(!moveValid()){toast('🔴 No room there — find a clear spot (green ring)');tone(160,.15,'square',.1);return false;}const p=movePos(),nmv=moving.s.type;restoreMove(p.x,p.z,p.rot);toast('📦 Placed '+nm(nmv));sfx.craft();return true;}
+function placeMove(){if(!moving)return false;if(!moveValid()){toast('🔴 No room there — find a clear spot (green ring)');tone(160,.15,'square',.1);return false;}const p=movePos(),nmv=moving.s.type;const ns=restoreMove(p.x,p.z,p.rot);MP.send({t:'struct',s:{type:nmv,x:p.x,z:p.z,rot:p.rot,tier:ns.tier,lvl:ns.lvl}});toast('📦 Placed '+nm(nmv));sfx.craft();return true;}
 function cancelMove(){if(!moving)return false;const o=moving;restoreMove(o.ox,o.oz,o.orot);toast('↩️ Put back where it was');return true;}
 function pickupTarget(){if(moving)return{l:'PLACE',f:placeMove};const s=movableNear();if(s)return{l:'HOLD: PICK UP',f:()=>startMove(s)};return null;}
 
@@ -1438,5 +1520,5 @@ Promise.resolve().then(()=>{buildVillages();buildBossLairs();buildTreasure();spa
 loop();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js');
 // test hooks
-window.__game={PONDS,LAVA,weatherKind:()=>wxKind,GQ,updWeatherFx,KIDS,KIDENTS,kidState:()=>kidState,treeInstalled:()=>treeInstalled,TREE,talkKid,rescueKid,hintKid,installPart,claimableParts,treeTarget,PART_FOR_BOSS,buildCaves,breakableNear,tryBreak,doBreak,breakCost,breakRefund,breakNeedsConfirm,canBreak,get breakConfirm(){return breakConfirm;},PROJ,shoot,blockedNatural,losClear,structTopAt,SH,pickCampSpot,updTraderArrow,TRADERS,spawnTrader,despawnTrader,talkTrader,FSELL,updTraders,get ftDay(){return ftDay;},get dtDay(){return dtDay;},showHow,closeHow,updSteps,stepList,clockHr,get duskF(){return duskF;},updDusk,lightsOn,get stepsShown(){return stepsShown;},SAFEU,addSafeShader,CHAR:()=>CHAR,charLook,applyChar,openChar,closeChar,randomChar,HATS,armorKey,craftAll,maxCrafts,startMove,placeMove,cancelMove,movableNear,moveValid,raidNumFor,nextRaidDay,raidHudTxt,get moving(){return moving;},get moveGhost(){return moveGhost;},get moveRing(){return moveRing;},safeBlue,DEF,SEG,segDist,dmgStruct,slowAt,climb,climbDown,toggleGate,loadTurret,repairStruct,updDefenses,get raidQ(){return raidQ;},spawnCult,tickRaid,placePos,placeOk,rotGhost,get ghostType(){return ghostType;},get ghost(){return ghost;},get bellRang(){return bellRang;},setBlock:v=>{mBlock=v;},hurtPlayer,blocked,setCam:v=>{camDist=v;},MUS,pickTheme,FLV,upFire,openFire,renderFire,litFire,fireLight,fireFill,get curFire(){return curFire;},TCH,openTreasure,startRaid,jump,cultTick,get raidDay(){return raidDay;},get day(){return day;},set day(v){day=v;},get dayT(){return dayT;},set dayT(v){dayT=v;},pBlocked,P,get inv(){return inv;},set inv(v){inv=v;},RES,animals:()=>animals,get boss(){return boss;},BOSSES,VILLAGES,NPCS,structs,biomeAt,doAttack,gather,talk,useTarget,spawnAnimal,hitAnimal,hitBoss,quests:()=>quests,revealed:()=>revealed,bossDone:()=>bossDone,kills:()=>kills,add,save,teleport:(x,z)=>{P.x=x;P.z=z;},setPaused:v=>paused=v,night,setDay:t=>dayT=t,closeDlg:endTalk,endTalk,startGame,get slots(){return slots;},cg,matchGrid,craftOut,fillRecipe,RECIPES,openBag,closeBag,renderBag,useSlot,get selHot(){return selHot;},set selHot(v){selHot=v;},fuelFire,fireR,litAt,openShop,get coins(){return coins;},set coins(v){coins=v;},cnt,curTier,placeStruct,questList,addItem};
+window.__game={MP,rateBase,showRating,mpCreate,mpJoin,showMpWin,get MODE(){return MODE;},set MODE(v){MODE=v;updModeCards();},updModeCards,PONDS,LAVA,weatherKind:()=>wxKind,GQ,updWeatherFx,KIDS,KIDENTS,kidState:()=>kidState,treeInstalled:()=>treeInstalled,TREE,talkKid,rescueKid,hintKid,installPart,claimableParts,treeTarget,PART_FOR_BOSS,buildCaves,breakableNear,tryBreak,doBreak,breakCost,breakRefund,breakNeedsConfirm,canBreak,get breakConfirm(){return breakConfirm;},PROJ,shoot,blockedNatural,losClear,structTopAt,SH,pickCampSpot,updTraderArrow,TRADERS,spawnTrader,despawnTrader,talkTrader,FSELL,updTraders,get ftDay(){return ftDay;},get dtDay(){return dtDay;},showHow,closeHow,updSteps,stepList,clockHr,get duskF(){return duskF;},updDusk,lightsOn,get stepsShown(){return stepsShown;},SAFEU,addSafeShader,CHAR:()=>CHAR,charLook,applyChar,openChar,closeChar,randomChar,HATS,armorKey,craftAll,maxCrafts,startMove,placeMove,cancelMove,movableNear,moveValid,raidNumFor,nextRaidDay,raidHudTxt,get moving(){return moving;},get moveGhost(){return moveGhost;},get moveRing(){return moveRing;},safeBlue,DEF,SEG,segDist,dmgStruct,slowAt,climb,climbDown,toggleGate,loadTurret,repairStruct,updDefenses,get raidQ(){return raidQ;},spawnCult,tickRaid,placePos,placeOk,rotGhost,get ghostType(){return ghostType;},get ghost(){return ghost;},get bellRang(){return bellRang;},setBlock:v=>{mBlock=v;},hurtPlayer,blocked,setCam:v=>{camDist=v;},MUS,pickTheme,FLV,upFire,openFire,renderFire,litFire,fireLight,fireFill,get curFire(){return curFire;},TCH,openTreasure,startRaid,jump,cultTick,get raidDay(){return raidDay;},get day(){return day;},set day(v){day=v;},get dayT(){return dayT;},set dayT(v){dayT=v;},pBlocked,P,get inv(){return inv;},set inv(v){inv=v;},RES,animals:()=>animals,get boss(){return boss;},BOSSES,VILLAGES,NPCS,structs,biomeAt,doAttack,gather,talk,useTarget,spawnAnimal,hitAnimal,hitBoss,quests:()=>quests,revealed:()=>revealed,bossDone:()=>bossDone,kills:()=>kills,add,save,teleport:(x,z)=>{P.x=x;P.z=z;},setPaused:v=>paused=v,night,setDay:t=>dayT=t,closeDlg:endTalk,endTalk,startGame,get slots(){return slots;},cg,matchGrid,craftOut,fillRecipe,RECIPES,openBag,closeBag,renderBag,useSlot,get selHot(){return selHot;},set selHot(v){selHot=v;},fuelFire,fireR,litAt,openShop,get coins(){return coins;},set coins(v){coins=v;},cnt,curTier,placeStruct,questList,addItem};
 Object.assign(window.__game,{project:(x,z)=>{V.set(x,H(x,z)+1,z).project(camera);return{x:(V.x+1)/2*innerWidth,y:(1-V.y)/2*innerHeight};},camDist:()=>camDist,camYaw:()=>camYaw});
