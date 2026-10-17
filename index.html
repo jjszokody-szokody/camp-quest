@@ -21,6 +21,7 @@ h2{margin:4px 0 14px;font-weight:600;color:#cfe8c0;font-size:clamp(13px,3vw,18px
 .bar{width:min(150px,26vw);height:12px;background:#0008;border-radius:6px;overflow:hidden;position:relative;border:1px solid #fff3}
 .bar i{display:block;height:100%}.bar b{position:absolute;left:4px;top:-1px;font-size:10px;text-shadow:0 1px 1px #000}
 #info{position:absolute;top:max(8px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);text-align:center;font-size:13px;font-weight:700;text-shadow:0 1px 3px #000;background:#0005;padding:3px 10px;border-radius:10px}
+#tArrow{position:absolute;z-index:6;pointer-events:none;background:#101408d8;border:2px solid #ffd400;border-radius:20px;padding:4px 10px;font-weight:800;font-size:14px;transform:translate(-50%,-50%);white-space:nowrap}#tArrowDir{display:inline-block;color:#ffd400;margin:0 3px}
 #bHelp{position:absolute;top:178px;right:max(10px,env(safe-area-inset-right));width:38px;height:38px;border-radius:50%;border:2px solid #fff8;background:#2e6a8acc;color:#fff;font-size:20px;font-weight:900;pointer-events:auto;z-index:6}
 #firstSteps{position:absolute;top:150px;left:max(8px,env(safe-area-inset-left));width:250px;background:#101408cc;border:1px solid #c99a4a;border-radius:10px;padding:7px 9px;font-size:12px;line-height:1.55;pointer-events:auto;z-index:6}#firstSteps button{float:right;background:none;border:0;color:#fff;cursor:pointer}
 #quit{position:absolute;top:max(6px,env(safe-area-inset-top));left:max(6px,env(safe-area-inset-left));width:34px;height:34px;border-radius:17px;border:2px solid #fff8;background:#0008;color:#fff;font-size:17px;font-weight:900;pointer-events:auto}
@@ -128,7 +129,7 @@ body:not(.desktop) #heldName{bottom:calc(54px + env(safe-area-inset-bottom))}
  <div id="info"></div>
  <canvas id="minimap" width="160" height="160"></canvas>
  <div id="bossbar" class="hidden"><div id="bossName"></div><div class="bar"><i id="bossB" style="background:#c0392b"></i></div></div>
- <button id="bHelp" title="How to play">?</button><div id="firstSteps" class="hidden"><b>🧭 First steps</b> <button id="stepsX">✕</button><div id="stepsBody"></div></div>
+ <div id="tArrow" class="hidden"><span id="tArrowIco"></span><span id="tArrowDir">➤</span><span id="tArrowTxt"></span></div><button id="bHelp" title="How to play">?</button><div id="firstSteps" class="hidden"><b>🧭 First steps</b> <button id="stepsX">✕</button><div id="stepsBody"></div></div>
  <div id="coins">🪙 <span id="coinV">0</span>  <span id="charNameHud"></span> &nbsp;📅 Day <span id="dayV">1</span> <span id="raidV" style="color:#ff8a8a"></span></div><div id="heldName"></div><div id="toast"></div><div id="prompt" class="hidden"></div>
  <div id="stick"><div id="knobBase"><div id="knob"></div></div></div>
  <div id="ctrl">
@@ -175,7 +176,7 @@ Shirt / outfit<br><span id="cShirt"></span><br>Trousers<br><span id="cPants"></s
 <div id="fireP" class="panel hidden"><div class="ph">🔥 Campfire<button class="x" id="fireX">✕</button></div><div class="pb" id="fireBody" style="display:block;overflow:auto"></div></div>
 <div id="chestP" class="panel hidden"><div class="ph">📦 Storage chest<button class="x" id="chestX">✕</button></div><div class="pb" id="chestBody" style="display:block"></div></div>
 <div id="heldIcon" class="hidden"></div><div id="bubble" class="hidden"></div>
-<div id="fullMap" class="hidden"><canvas id="fullMapCan" width="600" height="600"></canvas><div id="fmLeg">🟡 you · 🏠 village · 💀 boss (revealed) · 🔥 camp · tap to close</div></div>
+<div id="fullMap" class="hidden"><canvas id="fullMapCan" width="600" height="600"></canvas><div id="fmLeg">🟡 you · 🏠 village · 💀 boss (revealed) · 🔥 camp · <span style="color:#8dff5a">🧺 Fern · Forest Trader (leaves at dawn)</span> · <span style="color:#57b6ff">🛡️ Bram · Defense Trader (leaves at dusk)</span> · 🎁 chest · tap to close</div></div>
 <div id="win" class="screen hidden"><h1>👑 Champion of the Four Realms!</h1><h2>You defeated the Yeti King, Vine Queen, Sand Pharaoh and Magma Titan.<br>You earned the Crown of the Four Realms (+50% damage).</h2><button class="btn" id="winOk">Keep exploring</button></div>
 <script type="module" src="game.js"></script>
 </body></html>
