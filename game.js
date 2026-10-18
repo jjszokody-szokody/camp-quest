@@ -525,7 +525,7 @@ function aAnim(a,name,sp=1){if(name==='attack')rigOnce(a.fig,'attack',.5);else i
 function spawnAnimal(kind,x,z){const K=AN[kind];const a={kind,K,x,z,hp:K.hp,alive:true,dir:rnd(0,6.28),t:rnd(0,3),state:'wander',cd:0,flash:0,fig:animalFig(K),tx:x,tz:z,agro:K.beh==='hostile'};a.fig.position.set(x,H(x,z),z);scene.add(a.fig);animals.push(a);return a;}
 function killAnimal(a,byPlayer){a.alive=false;a.dead=2;aAnim(a,'death');if(byPlayer){kills[a.kind]=(kills[a.kind]||0)+1;if(a.K.beh==='hostile'||a.K.beh==='cultist'){const c=(a.K.beh==='cultist'?4:1)+Math.floor(Math.random()*4);coins+=c;floatTxt(a.x,a.z,'+'+c+' 🪙','#ffd400');}const got=[];for(const k in a.K.drops){add(k,a.K.drops[k]);got.push('+'+a.K.drops[k]+' '+ITEMS[k]);}toast(got.join('  '));}}
 let spawnT=0;
-function manageAnimals(dt){spawnT-=dt;for(const a of animals){if(Math.hypot(a.x-P.x,a.z-P.z)>85&&!a.boss&&!a.raid&&!a.cave){a.gone=true;}}
+function manageAnimals(dt){if(TUT.active)return;spawnT-=dt;for(const a of animals){if(Math.hypot(a.x-P.x,a.z-P.z)>85&&!a.boss&&!a.raid&&!a.cave){a.gone=true;}}
  animals=animals.filter(a=>{if(a.gone||(a.dead!==undefined&&a.dead<=0)){scene.remove(a.fig);return false;}return true;});
  if(spawnT>0)return;spawnT=1.2;const live=animals.filter(a=>a.alive&&!a.minion).length;if(live>=(isTouch?14:18))return;
  for(let t=0;t<6;t++){const ang=rnd(0,6.28),d=rnd(32,60),x=P.x+Math.cos(ang)*d,z=P.z+Math.sin(ang)*d;if(Math.abs(x)>W-5||Math.abs(z)>W-5||inPond(x,z,1)||inLava(x,z))continue;if(VILLAGES.some(v=>Math.hypot(x-v.x,z-v.z)<20))continue;
@@ -630,6 +630,39 @@ function updModeCards(){const d=MODE==='discovery';$('modeDisc').classList.toggl
  const pr=$('pRate');if(pr)pr.style.display=MODE==='decorative'?'':'none';}
 $('modeDisc').onclick=()=>{MODE='discovery';localStorage.setItem('cq_mode',MODE);updModeCards();};
 $('modeDeco').onclick=()=>{MODE='decorative';localStorage.setItem('cq_mode',MODE);updModeCards();};
+
+
+// ---------- Release 16: guided tutorial ----------
+const TUT={active:false,i:0,snap:null,iv:null,done:()=>!!localStorage.getItem('cq_tutdone')};
+const tutSteps=[
+ {t:'👋 Welcome to Emberfall!',x:()=>'Let’s learn by doing. '+(isTouch?'Use the <b>left joystick</b> to walk a few steps.':'Use <b>W or WASD</b> (or arrow keys) to walk a few steps.'),hi:()=>isTouch?'#stick':'#keys',snap:()=>({x:P.x,z:P.z}),ok:s2=>Math.hypot(P.x-s2.x,P.z-s2.z)>3},
+ {t:'👀 Look around',x:()=>isTouch?'Your camera follows where you walk — <b>turn by walking in a new direction</b>.':'<b>Right-drag the mouse</b> (or hold <b>Z / X</b>) to rotate your camera.',hi:()=>isTouch?null:'#keys',snap:()=>({yaw:camYaw,dir:P.dir}),ok:s2=>Math.abs(Math.atan2(Math.sin(camYaw-s2.yaw),Math.cos(camYaw-s2.yaw)))>.7||Math.abs(Math.atan2(Math.sin(P.dir-s2.dir),Math.cos(P.dir-s2.dir)))>.9},
+ {t:'👊 Punch a tree!',x:()=>'Walk up to any tree and '+(isTouch?'tap <b>HIT</b>':'<b>left-click</b>')+' to punch it (10 hits). Pick up the <b>wood</b> it drops.',snap:()=>({w:cnt('wood')}),ok:s2=>cnt('wood')>s2.w},
+ {t:'🎒 Open your bag',x:()=>isTouch?'Tap the <b>BAG</b> button (or a hotbar slot) to open your inventory.':'Press <b>Tab</b> or <b>I</b> to open your inventory.',hi:()=>isTouch?'#bBag':'#hotbar',ok:()=>!$('bag').classList.contains('hidden')},
+ {t:'🛠️ Craft your first tools',x:()=>'In the bag open <b>Recipes (C)</b>: craft <b>Planks</b>, then <b>Sticks</b>, then a <b>Wooden Axe</b>. Tip: Auto-fill + Craft all does the clicking for you!',hi:()=>null,snap:()=>({}),ok:()=>has('wood_axe')},
+ {t:'🪓 Chop with your axe',x:()=>'Select the axe in your hotbar (tap it / number key) and chop a whole tree — only <b>5 hits</b> with an axe. Gather the wood.',snap:()=>({w:cnt('wood')}),ok:s2=>cnt('wood')>s2.w},
+ {t:'⛏️ Stone + pickaxe',x:()=>'Punch <b>pebbles</b> (small grey stones) for stone, then craft a <b>Wooden Pickaxe</b> from the recipe book.',snap:()=>({}),ok:()=>has('wood_pickaxe')},
+ {t:'🪨 Mine a rock',x:()=>'With the pickaxe selected, hit a big <b>rock</b> until it breaks — that’s proper mining (iron and gold need better pickaxes later).',snap:()=>({s:cnt('stone')}),ok:s2=>cnt('stone')>s2.s},
+ {t:'🔥 Feed the campfire',x:()=>'Go to your campfire (the blue circle keeps monsters out!) and press '+(isTouch?'<b>USE</b>':'<b>E</b>')+', then <b>Add log</b>. A fed fire = a safe camp.',snap:()=>({f:(structs.find(x=>x.main)||{}).fuel||0}),ok:s2=>(((structs.find(x=>x.main)||{}).fuel||0)>s2.f+3)},
+ {t:'🍖 Eat & drink',x:()=>'See the bars (top-left)? <b>Hunger</b> and <b>Thirst</b> matter. Eat <b>berries</b> from bushes, and drink at a pond or well ('+(isTouch?'USE':'E')+' by the water). Top one of them up now.',hi:()=>'#bars',snap:()=>({h:P.hunger,th:P.thirst}),ok:s2=>P.hunger>s2.h+4||P.thirst>s2.th+4||P.hunger>=98||P.thirst>=98},
+ {t:'⛺ Build something',x:()=>MODE==='decorative'?'Place a <b>bench</b> — or any Decorative item (rug, table, flower pot!) — from your hotbar: select it, then '+(isTouch?'tap it again':'press the number again')+' to place. (Hold '+(isTouch?'PICK UP':'E')+' later to move it.)':'Craft and place a <b>bench</b> (4 planks in the bag grid) — or pitch a tent/bed if you have the hide. Select it in the hotbar, then '+(isTouch?'tap it again':'press the number again')+' to place it.',snap:()=>({}),ok:()=>structs.some(x=>['bench','tent','bed','rug','table','flower_pot','sign_post','path_stones'].includes(x.type))},
+ {t:'⤴️ Jump!',x:()=>isTouch?'Tap <b>JUMP</b> — you can hop clean over your own walls and fences!':'Press <b>Space</b> to jump — you can hop clean over your own walls and fences!',hi:()=>isTouch?'#bJump':'#keys',snap:()=>({}),ok:()=>P.jy>.35},
+ {t:'🗺️ Map & help',x:()=>isTouch?'Tap the <b>minimap</b> (top-right) to open the big map. The <b>?</b> button reopens How to Play any time.':'Press <b>M</b> (or click the minimap) to open the big map. The <b>?</b> button reopens How to Play any time.',hi:()=>'#minimap',snap:()=>({}),ok:()=>!$('fullMap').classList.contains('hidden')},
+ {t:'🎉 You’re ready!',x:()=>'Survive the nights, visit <b>villages</b> for quests and trading, rescue the <b>lost kids</b>, gather <b>Tree Parts</b> from the four bosses to heal the <b>Tree of Healing</b>… and in Discovery, beat all four bosses to win the Crown. Good luck, survivor!',last:1,snap:()=>({}),ok:()=>false}];
+function tutShow(){const st=tutSteps[TUT.i];if(!st)return tutEnd(true);$('tutProg').textContent='Tutorial · Step '+(TUT.i+1)+' / '+tutSteps.length+(MODE==='decorative'?' · Decorative':'');
+ $('tutTitle').textContent=st.t;$('tutText').innerHTML=typeof st.x==='function'?st.x():st.x;$('tutNext').style.display=st.last?'':'none';$('tutCard').classList.remove('hidden');TUT.snap=st.snap?st.snap():{};tutHiPos();}
+function tutHiPos(){const st=tutSteps[TUT.i],sel=st&&st.hi?st.hi():null,hi=$('tutHi');if(!sel){hi.classList.add('hidden');return;}
+ const el=document.querySelector(sel);if(!el){hi.classList.add('hidden');return;}const r=el.getBoundingClientRect();if(r.width===0){hi.classList.add('hidden');return;}
+ hi.style.left=(r.left-6)+'px';hi.style.top=(r.top-6)+'px';hi.style.width=(r.width+12)+'px';hi.style.height=(r.height+12)+'px';hi.classList.remove('hidden');}
+function tutAdvance(){TUT.i++;sfx.craft();if(TUT.i>=tutSteps.length)return tutEnd(true);tutShow();}
+function tutEnd(finished){TUT.active=false;clearInterval(TUT.iv);$('tutCard').classList.add('hidden');$('tutHi').classList.add('hidden');
+ if(finished){localStorage.setItem('cq_tutdone','1');toast('🎓 Tutorial complete — press ? any time for How to Play. Good luck!',4);}}
+function startTutorial(){if(!P.fig)return;TUT.i=0;TUT.active=true;tutShow();clearInterval(TUT.iv);
+ TUT.iv=setInterval(()=>{if(!TUT.active)return;tutHiPos();const st=tutSteps[TUT.i];if(st&&!st.last&&st.ok&&TUT.snap&&st.ok(TUT.snap))tutAdvance();},220);}
+$('tutSkip').onclick=()=>{tutEnd(true);toast('🎓 Tutorial skipped — replay it any time from the title or pause menu.',3);};
+$('tutNext').onclick=()=>tutEnd(true);
+$('bTut').onclick=()=>{if(!running){startGame(true);}setTimeout(()=>startTutorial(),600);};
+$('pTut').onclick=()=>{$('pause').classList.add('hidden');paused=false;startTutorial();};
 
 // ---------- telegraphs & projectiles ----------
 const TELE=[],PROJ=[],BFX=[];
@@ -1358,7 +1391,7 @@ function startRaid(){raidDay=day;const rn=raidNumFor(day);const n=Math.min(15,rn
  toast('⚠️ <b>The Forest Soldiers are coming!</b><br>Raid '+rn+' · first wave in ~30s · '+n+' Forest Soldier'+(n>1?'s':'')+' in '+Math.ceil(n/2)+' wave'+(n>2?'s':'')+'. They are after YOU — defend yourself!',5);tone(220,.09,'sine',.09);setTimeout(()=>tone(220,.09,'sine',.09),180);save();return n;}
 function spawnCult(kind){const fire=structs.find(s=>s.main)||structs.find(s=>s.type==='campfire')||{x:P.x,z:P.z};const R0=(fire.fuel!==undefined?fireR(fire):10)+16;let x,z,tries=0;do{const a=Math.random()*6.28,r=rnd(R0,R0+8);x=clamp(fire.x+Math.cos(a)*r,-W+5,W-5);z=clamp(fire.z+Math.sin(a)*r,-W+5,W-5);tries++;}while((inPond(x,z,1)||inLava(x,z)||blocked(x,z,.6))&&tries<30);
  const c=spawnAnimal(kind,x,z);c.raid=1;c.hp=c.hp*(1+(day-2)*.05);c.agro=true;return c;}
-function tickRaid(dt){if(!raidQ.length)return;let w=0;for(const q of raidQ){q.t-=dt;if(q.t<=0&&!q.done){q.done=1;spawnCult(q.kind);w=q.wave;}}if(w){toast('⚔️ Forest Soldier wave '+w+' has arrived!',2);tone(110,.5,'sawtooth',.15,60);}raidQ=raidQ.filter(q=>!q.done);}
+function tickRaid(dt){if(typeof TUT!=='undefined'&&TUT.active)return;if(!raidQ.length)return;let w=0;for(const q of raidQ){q.t-=dt;if(q.t<=0&&!q.done){q.done=1;spawnCult(q.kind);w=q.wave;}}if(w){toast('⚔️ Forest Soldier wave '+w+' has arrived!',2);tone(110,.5,'sawtooth',.15,60);}raidQ=raidQ.filter(q=>!q.done);}
 function cultTick(a,dt,dp){const f=a.fig;let tx=P.x,tz=P.z,spd=a.K.spd,tgt='player',tS=null;
  if(P.dead)tgt='none';
  {let bd=14;for(const s of structs)if(s.type==='scarecrow'){const d=Math.hypot(s.x-a.x,s.z-a.z);if(d<bd){bd=d;tS=s;}}if(tS&&dp>3){tgt='decoy';tx=tS.x;tz=tS.z;}}
@@ -1508,7 +1541,7 @@ function updSteps(){const el=$('firstSteps');if(!el)return;if(!stepsShown||steps
 function startGame(cont){audio();MUS.init();$('title').classList.add('hidden');$('hud').classList.remove('hidden');
  if(!P.fig){P.fig=makeHuman(charLook());P._ak=armorKey();scene.add(P.fig);const hn=$('charNameHud');if(hn)hn.textContent='👤 '+CHAR.name;}
  if(!cont&&!running){}running=true;paused=false;clock.getDelta();camera.position.set(P.x,20,P.z+14);
- if(!cont){stepsShown=!stepsOff;}if(!cont)toast('🏕️ Welcome! Punch trees (10 hits), grab pebbles & bushes, then craft an axe and a pickaxe.<br>Oakhollow village is to the south-east.',6);
+ if(!cont){stepsShown=!stepsOff;if(!TUT.done())setTimeout(()=>{if(!TUT.active)startTutorial();},1200);}if(!cont)toast('🏕️ Welcome! Punch trees (10 hits), grab pebbles & bushes, then craft an axe and a pickaxe.<br>Oakhollow village is to the south-east.',6);
  if(isTouch&&!matchMedia('(display-mode: standalone)').matches&&!navigator.standalone)setTimeout(()=>toast('Tip: Share → Add to Home Screen for full-screen play',4),7000);}
 function newGame(){if(localStorage.getItem(SAVE_KEY)&&!confirm('Start a new game? Your saved camp will be erased.'))return;localStorage.removeItem(SAVE_KEY);location.hash='new';location.reload();}
 $('bNew').onclick=()=>{if(running||P.fig||localStorage.getItem(SAVE_KEY))return newGame();startGame(false);};
@@ -1520,5 +1553,100 @@ Promise.resolve().then(()=>{buildVillages();buildBossLairs();buildTreasure();spa
 loop();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js');
 // test hooks
-window.__game={MP,rateBase,showRating,mpCreate,mpJoin,showMpWin,get MODE(){return MODE;},set MODE(v){MODE=v;updModeCards();},updModeCards,PONDS,LAVA,weatherKind:()=>wxKind,GQ,updWeatherFx,KIDS,KIDENTS,kidState:()=>kidState,treeInstalled:()=>treeInstalled,TREE,talkKid,rescueKid,hintKid,installPart,claimableParts,treeTarget,PART_FOR_BOSS,buildCaves,breakableNear,tryBreak,doBreak,breakCost,breakRefund,breakNeedsConfirm,canBreak,get breakConfirm(){return breakConfirm;},PROJ,shoot,blockedNatural,losClear,structTopAt,SH,pickCampSpot,updTraderArrow,TRADERS,spawnTrader,despawnTrader,talkTrader,FSELL,updTraders,get ftDay(){return ftDay;},get dtDay(){return dtDay;},showHow,closeHow,updSteps,stepList,clockHr,get duskF(){return duskF;},updDusk,lightsOn,get stepsShown(){return stepsShown;},SAFEU,addSafeShader,CHAR:()=>CHAR,charLook,applyChar,openChar,closeChar,randomChar,HATS,armorKey,craftAll,maxCrafts,startMove,placeMove,cancelMove,movableNear,moveValid,raidNumFor,nextRaidDay,raidHudTxt,get moving(){return moving;},get moveGhost(){return moveGhost;},get moveRing(){return moveRing;},safeBlue,DEF,SEG,segDist,dmgStruct,slowAt,climb,climbDown,toggleGate,loadTurret,repairStruct,updDefenses,get raidQ(){return raidQ;},spawnCult,tickRaid,placePos,placeOk,rotGhost,get ghostType(){return ghostType;},get ghost(){return ghost;},get bellRang(){return bellRang;},setBlock:v=>{mBlock=v;},hurtPlayer,blocked,setCam:v=>{camDist=v;},MUS,pickTheme,FLV,upFire,openFire,renderFire,litFire,fireLight,fireFill,get curFire(){return curFire;},TCH,openTreasure,startRaid,jump,cultTick,get raidDay(){return raidDay;},get day(){return day;},set day(v){day=v;},get dayT(){return dayT;},set dayT(v){dayT=v;},pBlocked,P,get inv(){return inv;},set inv(v){inv=v;},RES,animals:()=>animals,get boss(){return boss;},BOSSES,VILLAGES,NPCS,structs,biomeAt,doAttack,gather,talk,useTarget,spawnAnimal,hitAnimal,hitBoss,quests:()=>quests,revealed:()=>revealed,bossDone:()=>bossDone,kills:()=>kills,add,save,teleport:(x,z)=>{P.x=x;P.z=z;},setPaused:v=>paused=v,night,setDay:t=>dayT=t,closeDlg:endTalk,endTalk,startGame,get slots(){return slots;},cg,matchGrid,craftOut,fillRecipe,RECIPES,openBag,closeBag,renderBag,useSlot,get selHot(){return selHot;},set selHot(v){selHot=v;},fuelFire,fireR,litAt,openShop,get coins(){return coins;},set coins(v){coins=v;},cnt,curTier,placeStruct,questList,addItem};
+
+// ---------- Release 16b: hover identification (world + inventory tooltips) ----------
+const hoverRing=new THREE.Mesh(new THREE.RingGeometry(.82,1,28),new THREE.MeshBasicMaterial({color:0xffd94d,transparent:true,opacity:.85,side:THREE.DoubleSide,depthWrite:false}));
+hoverRing.rotation.x=-Math.PI/2;hoverRing.visible=false;hoverRing.renderOrder=5;scene.add(hoverRing);
+const TREEN={forest:'Oak Tree',snow:'Snow Pine',jungle:'Jungle Tree',desert:'Dry Tree',lava:'Charred Tree'};
+const ANAME=a=>a.kind==='cultist'?'Forest Scout':a.kind==='cultist_torch'?'Forest Torchbearer':a.kind==='cultist_shaman'?'Forest Mage':a.kind.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+function anyAxe(){return ['wood','stone','iron','gold','obsidian'].some(t=>has(t+'_axe'));}
+function anyPick(){return ['wood','stone','iron','gold','obsidian'].some(t=>has(t+'_pickaxe'));}
+function hoverCands(){const out=[];
+ for(const o of near(P.x,P.z,3)){if(!o.alive)continue;const d=Math.hypot(o.x-P.x,o.z-P.z);if(d>34)continue;const bi=o.b;
+  if(o.type==='tree')out.push({x:o.x,z:o.z,y:2.2,r:1,n:TREEN[bi]||'Tree',a:'Click to chop · '+(anyAxe()?'5':'10')+' hits'+(anyAxe()?' with axe':' with fists')});
+  else if(o.type==='pebble')out.push({x:o.x,z:o.z,y:.5,r:.5,n:'Pebble',a:'Click to pick up stone'});
+  else if(o.type==='bush')out.push({x:o.x,z:o.z,y:.8,r:.7,n:'Berry Bush',a:'Click to gather berries & fibre'});
+  else if(o.type==='cactus')out.push({x:o.x,z:o.z,y:1,r:.7,n:'Cactus',a:'Click to gather cactus fruit'});
+  else{const nm2={rock:'Rock',iron:'Iron Ore',gold:'Gold Ore',crystal:'Crystal',obsidian:'Obsidian'}[o.type];if(nm2){const need=['any','stone','iron','gold'][RTYPES[o.type].pick||1]||'stone';out.push({x:o.x,z:o.z,y:1,r:1.2,n:nm2,a:anyPick()?'Click to mine':'Needs a '+need+' pickaxe'});}}}
+ for(const a of animals)if(a.alive&&Math.hypot(a.x-P.x,a.z-P.z)<30){const beh=a.K.beh==='passive'?'Passive':a.K.beh==='cultist'?'Hostile · Forest Soldier':'Hostile';out.push({x:a.x,z:a.z,y:1.4,r:(a.K.bulk||1),n:ANAME(a),a:beh+' · Click to attack'});}
+ for(const n of NPCS)if(!n.inside&&Math.hypot(n.x-P.x,n.z-P.z)<30)out.push({x:n.x,z:n.z,y:1.8,r:.6,n:n.name+' of '+n.v.name,a:'Villager — E Talk'});
+ for(const tr of TRADERS)out.push({x:tr.x,z:tr.z,y:1.8,r:.6,n:tr.name+(tr.kind==='forest'?' the Forest Trader':' the Defense Trader'),a:'E Talk & trade'});
+ for(const e of KIDENTS)if(e.fig.visible)out.push({x:e.x,z:e.z,y:1.2,r:.5,n:e.def.name+' (lost kid)',a:'E Talk — rescue me!'});
+ for(const st of structs){if(st.type==='cave_rock')continue;const d=Math.hypot(st.x-P.x,st.z-P.z);if(d>24)continue;
+  if(st.type==='campfire')out.push({x:st.x,z:st.z,y:1.2,r:1.2,n:'Campfire Lv'+(st.lvl||1),a:'E Open menu · fuel '+Math.round(((st.fuel||0)/(FLV[st.lvl||1].maxF))*100)+'%'});
+  else if(st.type==='healing_tree')out.push({x:st.x,z:st.z,y:6,r:2.6,n:'Tree of Healing ('+treeInstalled.length+'/4)',a:'E Install Tree Parts / claim orb'});
+  else if(st.type==='chest')out.push({x:st.x,z:st.z,y:.8,r:.7,n:'Chest',a:'E Open storage'});
+  else if(st.type==='bench')out.push({x:st.x,z:st.z,y:1,r:.9,n:'Crafting Bench T'+(st.tier||1),a:'E Craft · better recipes'});
+  else if(st.type==='gate')out.push({x:st.x,z:st.z,y:1.4,r:1,n:nm(st.type).replace(/^\S+ /,''),a:st.open?'E Close gate':'E Open gate'});
+  else if(st.type==='turret')out.push({x:st.x,z:st.z,y:1.2,r:.8,n:'Ballista Turret',a:'E Load arrows ('+(st.ammo||0)+') / repair'});
+  else out.push({x:st.x,z:st.z,y:1,r:SR[st.type]||.6,n:nm(st.type).replace(/^\S+ /,''),a:st.perm?'':'Hold E to move · B to break'});}
+ for(const c of TCH)if(!c.open&&Math.hypot(c.x-P.x,c.z-P.z)<30)out.push({x:c.x,z:c.z,y:1,r:.8,n:'Treasure Chest',a:'E Open'});
+ return out;}
+let hoverCur=null;
+function hoverPick(mx,my){let best=null,bd=64;
+ for(const c of hoverCands()){V.set(c.x,H(c.x,c.z)+c.y,c.z).project(camera);if(V.z>1||V.z<-1)continue;const sx=(V.x+1)/2*innerWidth,sy=(1-V.y)/2*innerHeight;const d=Math.hypot(sx-mx,sy-my);if(d<bd){bd=d;best=c;}}
+ if(!best){ray.setFromCamera({x:mx/innerWidth*2-1,y:-(my/innerHeight)*2+1},camera);plane.constant=-(H(P.x,P.z)+.2);if(ray.ray.intersectPlane(plane,hitV)&&inPond(hitV.x,hitV.z,.5))best={x:hitV.x,z:hitV.z,y:.3,r:.8,n:'Water',a:'E Drink · fill a waterskin'};}
+ return best;}
+function hoverTick(){const tip=$('hoverTip');
+ if(invTipOn&&anyPanel())return;
+ if(!running||paused||anyPanel()||moving){tip.classList.add('hidden');hoverRing.visible=false;if(isTouch)updMobTip();return;}
+ if(isTouch){tip.classList.add('hidden');updMobTip();return;}
+ if(!mouse.in){tip.classList.add('hidden');hoverRing.visible=false;return;}
+ const c=hoverPick(mouse.x,mouse.y);hoverCur=c;
+ if(!c){tip.classList.add('hidden');hoverRing.visible=false;return;}
+ tip.innerHTML='<b>'+c.n+'</b>'+(c.a?'<br><span style="color:#ffe9a8">'+c.a+'</span>':'');tip.classList.remove('hidden');
+ tip.style.left=Math.min(innerWidth-285,mouse.x+16)+'px';tip.style.top=Math.max(6,mouse.y-14)+'px';
+ hoverRing.position.set(c.x,H(c.x,c.z)+.18,c.z);const rr=Math.max(.55,c.r||.7);hoverRing.scale.set(rr,rr,rr);hoverRing.visible=true;
+ hoverRing.material.opacity=.6+.35*Math.sin(performance.now()/180);}
+function updMobTip(){const el=$('mobTip');if(!running){el.classList.add('hidden');return;}
+ let best=null,bd=4.2;for(const c of hoverCands()){const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<bd){bd=d;best=c;}}
+ if(!best){el.classList.add('hidden');hoverRing.visible=false;return;}
+ V.set(best.x,H(best.x,best.z)+best.y+.7,best.z).project(camera);if(V.z>1){el.classList.add('hidden');return;}
+ el.textContent=best.n+(best.a?' — '+best.a:'');el.style.left=((V.x+1)/2*innerWidth)+'px';el.style.top=((1-V.y)/2*innerHeight)+'px';el.classList.remove('hidden');
+ hoverRing.position.set(best.x,H(best.x,best.z)+.18,best.z);const rr=Math.max(.55,best.r||.7);hoverRing.scale.set(rr,rr,rr);hoverRing.visible=true;}
+setInterval(hoverTick,120);
+// ----- inventory / recipe tooltips -----
+const ARMORP={hide_armor:20,leaf_armor:25,iron_armor:40,snow_wolf_armor:45,gold_armor:50,ember_armor:50,obsidian_armor:60,vine_armor:65,thorn_armor:35};
+const ITEMDESC={heartwood_charm:'Slowly regenerates your health. Pip’s thank-you gift.',ice_ring:'Cold drains 55% slower in the snow. Nia’s gift.',thorn_armor:'Jungle-woven thorns. Kito’s gift.',sandstorm_boots:'+15% movement speed. Zara’s gift.',lava_sword:'Sets enemies (and bosses) on fire. Ash’s gift.',boss_compass:'All four boss lairs show on your map (M).',fishing_rod:'Use from the hotbar beside a pond to catch Raw Fish.',repair_kit:'Use: fully repairs every damaged defence within 14 m.',sled:'Passive: glide 25% faster across snow.',crossbow:'Ranged: slow, heavy bolts. Needs arrows.',bow:'Ranged weapon. Needs arrows.',bandage:'Use: +30 health.',waterskin:'Carries 5 sips of water. Refill at ponds/wells.',torch:'Lights your way at dusk when carried.',lantern:'Bright, forever light at dusk.',healing_fruit:'From the healed Tree of Healing.',frost_root:'A Tree Part — bring it to the Tree of Healing (forest centre).',vine_seed:'A Tree Part — bring it to the Tree of Healing (forest centre).',sand_heart:'A Tree Part — bring it to the Tree of Healing (forest centre).',ember_core:'A Tree Part — bring it to the Tree of Healing (forest centre).',shield:'Hold Q / right-click to block 65% of damage.',guard_shield:'Hold Q / right-click to block 82% of damage.',cold_gear:'Survive the snowy mountains.',heat_gear:'Survive the desert & volcanic heat.',sun_amulet:'Fast health regeneration.',crown:'+50% damage. Champion of the Four Realms!'};
+function itemInfo(k,n){if(!k)return null;const lines=[];
+ if(WEAP[k])lines.push('⚔️ Damage '+WEAP[k].d+' · reach '+WEAP[k].r+(k.endsWith('_axe')?' · chops trees in 5 hits':k.endsWith('_pickaxe')?' · mines rock & ore':''));
+ if(k==='bow')lines.push('🏹 Damage 14 · uses arrows');
+ if(k==='crossbow')lines.push('🏹 Damage 24 · uses arrows · slower, harder hits');
+ if(ARMORP[k])lines.push('🛡️ Blocks '+ARMORP[k]+'% of damage');
+ if(k==='snow_wolf_armor')lines.push('❄️ Also counts as cold gear');
+ if(k==='ember_armor')lines.push('🌋 Also counts as heat gear');
+ if(FOOD[k]){const [h,hp]=FOOD[k];lines.push('🍖 +'+h+' hunger'+(hp?' · '+(hp>0?'+':'')+hp+' health':''));}
+ if(k==='heal_tonic')lines.push('🧪 Drink: +55 health');
+ if(k==='speed_tonic')lines.push('⚡ Drink: +30% speed for 45 s');
+ if(k==='warmth_tonic')lines.push('♨️ Drink: full warmth, cold barely bites (60 s)');
+ if(k==='fire_tonic')lines.push('🔥 Drink: lava & heat barely hurt (60 s)');
+ if(PLACE.includes(k))lines.push('🏠 Building — select in hotbar, use again to place · hold E to move · B breaks for a refund');
+ if(ITEMDESC[k])lines.push(ITEMDESC[k]);
+ const sv=(typeof SELL!=='undefined'&&SELL[k])||(typeof FSELL!=='undefined'&&FSELL[k]);if(sv)lines.push('🪙 Sells for about '+sv+' coins');
+ if(!lines.length)lines.push('Material — used in crafting recipes (C).');
+ return{title:nm(k)+(n&&n>1?' ×'+n:''),body:lines.join('<br>'),hint:isTouch?'Tap to pick up / move · tap a selected hotbar item again to use':'Drag or click to move · right-click / press number again to use'};}
+function slotInfoFromEl(el){if(!el)return null;
+ const rec=el.closest&&el.closest('[data-rec]');if(rec){const r=RECIPES[+rec.dataset.rec];if(!r)return null;const need=recipeNeeds(r);
+  return{title:nm(r.out)+(r.n>1?' ×'+r.n:''),body:(r.d||'')+'<br>🧾 Needs: '+Object.entries(need).map(([k,n])=>n+' '+nm(k).replace(/^\S+ /,'')).join(', ')+'<br>'+(r.tier?'🛠️ Bench tier '+r.tier:'🎒 Bag 2×2'),hint:'Auto-fill loads the grid · double-click = craft all'};}
+ const buy=el.closest&&el.closest('[data-buy]');if(buy)return itemInfo(buy.dataset.buy,1);
+ const sell=el.closest&&el.closest('[data-sell],[data-sellall]');if(sell)return itemInfo((sell.dataset.sell||sell.dataset.sellall),cnt(sell.dataset.sell||sell.dataset.sellall));
+ const hs=el.closest&&el.closest('.hs');if(hs){const s2=slots[+hs.dataset.h];return s2?itemInfo(s2.k,s2.n):null;}
+ const sl=el.closest&&el.closest('.sl');if(!sl)return null;
+ if(sl.dataset.take)return itemInfo(sl.dataset.take,chest[sl.dataset.take]);
+ if(sl.dataset.store!==undefined&&sl.dataset.store!==''){const s2=slots[+sl.dataset.store];return s2?itemInfo(s2.k,s2.n):null;}
+ if(sl.dataset.s==='out'){const r=matchGrid(cg,gsz(),curTier());return r?itemInfo(r.out,r.n||1):null;}
+ if(sl.dataset.s){const ref=slotRef(sl.dataset.s);if(ref){const s2=ref[0][ref[1]];return s2?itemInfo(s2.k,s2.n):null;}}
+ return null;}
+let tipEl2=null,tipTimer=null,invTipOn=false;
+function showInvTip(info,x,y){const tip=$('hoverTip');if(!info){invTipOn=false;tip.classList.add('hidden');return;}invTipOn=true;
+ tip.innerHTML='<b>'+info.title+'</b><br>'+info.body+'<br><span style="color:#bcd38a;font-size:12px">'+info.hint+'</span>';tip.classList.remove('hidden');
+ tip.style.left=Math.min(innerWidth-285,(x||mouse.x)+16)+'px';tip.style.top=Math.max(6,Math.min(innerHeight-150,(y||mouse.y)-10))+'px';}
+document.addEventListener('pointerover',e=>{if(isTouch)return;const info=slotInfoFromEl(e.target);if(info)showInvTip(info,e.clientX,e.clientY);});
+document.addEventListener('pointermove',e=>{if(isTouch||!tipEl2)return;});
+document.addEventListener('pointerout',e=>{if(isTouch)return;if(slotInfoFromEl(e.target)&&!slotInfoFromEl(e.relatedTarget)){invTipOn=false;$('hoverTip').classList.add('hidden');}});
+document.addEventListener('pointerdown',e=>{const info=slotInfoFromEl(e.target);tipEl2=info;
+ if(isTouch&&info){clearTimeout(tipTimer);tipTimer=setTimeout(()=>showInvTip(info,e.clientX,e.clientY),450);}});
+document.addEventListener('pointerup',e=>{clearTimeout(tipTimer);if(isTouch)setTimeout(()=>{if(!tipEl2){invTipOn=false;$('hoverTip').classList.add('hidden');}},2400);tipEl2=null;});
+
+window.__game={hoverPick,itemInfo,slotInfoFromEl,hoverCands,TUT,startTutorial,tutSteps,tutAdvance,MP,rateBase,showRating,mpCreate,mpJoin,showMpWin,get MODE(){return MODE;},set MODE(v){MODE=v;updModeCards();},updModeCards,PONDS,LAVA,weatherKind:()=>wxKind,GQ,updWeatherFx,KIDS,KIDENTS,kidState:()=>kidState,treeInstalled:()=>treeInstalled,TREE,talkKid,rescueKid,hintKid,installPart,claimableParts,treeTarget,PART_FOR_BOSS,buildCaves,breakableNear,tryBreak,doBreak,breakCost,breakRefund,breakNeedsConfirm,canBreak,get breakConfirm(){return breakConfirm;},PROJ,shoot,blockedNatural,losClear,structTopAt,SH,pickCampSpot,updTraderArrow,TRADERS,spawnTrader,despawnTrader,talkTrader,FSELL,updTraders,get ftDay(){return ftDay;},get dtDay(){return dtDay;},showHow,closeHow,updSteps,stepList,clockHr,get duskF(){return duskF;},updDusk,lightsOn,get stepsShown(){return stepsShown;},SAFEU,addSafeShader,CHAR:()=>CHAR,charLook,applyChar,openChar,closeChar,randomChar,HATS,armorKey,craftAll,maxCrafts,startMove,placeMove,cancelMove,movableNear,moveValid,raidNumFor,nextRaidDay,raidHudTxt,get moving(){return moving;},get moveGhost(){return moveGhost;},get moveRing(){return moveRing;},safeBlue,DEF,SEG,segDist,dmgStruct,slowAt,climb,climbDown,toggleGate,loadTurret,repairStruct,updDefenses,get raidQ(){return raidQ;},spawnCult,tickRaid,placePos,placeOk,rotGhost,get ghostType(){return ghostType;},get ghost(){return ghost;},get bellRang(){return bellRang;},setBlock:v=>{mBlock=v;},hurtPlayer,blocked,setCam:v=>{camDist=v;},MUS,pickTheme,FLV,upFire,openFire,renderFire,litFire,fireLight,fireFill,get curFire(){return curFire;},TCH,openTreasure,startRaid,jump,cultTick,get raidDay(){return raidDay;},get day(){return day;},set day(v){day=v;},get dayT(){return dayT;},set dayT(v){dayT=v;},pBlocked,P,get inv(){return inv;},set inv(v){inv=v;},RES,animals:()=>animals,get boss(){return boss;},BOSSES,VILLAGES,NPCS,structs,biomeAt,doAttack,gather,talk,useTarget,spawnAnimal,hitAnimal,hitBoss,quests:()=>quests,revealed:()=>revealed,bossDone:()=>bossDone,kills:()=>kills,add,save,teleport:(x,z)=>{P.x=x;P.z=z;},setPaused:v=>paused=v,night,setDay:t=>dayT=t,closeDlg:endTalk,endTalk,startGame,get slots(){return slots;},cg,matchGrid,craftOut,fillRecipe,RECIPES,openBag,closeBag,renderBag,useSlot,get selHot(){return selHot;},set selHot(v){selHot=v;},fuelFire,fireR,litAt,openShop,get coins(){return coins;},set coins(v){coins=v;},cnt,curTier,placeStruct,questList,addItem};
 Object.assign(window.__game,{project:(x,z)=>{V.set(x,H(x,z)+1,z).project(camera);return{x:(V.x+1)/2*innerWidth,y:(1-V.y)/2*innerHeight};},camDist:()=>camDist,camYaw:()=>camYaw});
