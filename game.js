@@ -108,7 +108,7 @@ const MAT={};function mat(c,o={}){const k=c+'|'+JSON.stringify(o);return MAT[k]|
 function part(par,geo,m,x=0,y=0,z=0,sx=1,sy=1,sz=1){const p=new THREE.Mesh(geo,m);p.position.set(x,y,z);p.scale.set(sx,sy,sz);p.castShadow=true;par.add(p);return p;}
 function joint(par,x,y,z){const g=new THREE.Group();g.position.set(x,y,z);par.add(g);return g;}
 let _PT=null;function ptex(){if(_PT)return _PT;const stripe=(col,n,w)=>c=>{c.fillStyle='#f2f2f2';c.fillRect(0,0,128,128);for(let i=0;i<n;i++){c.fillStyle=col;c.fillRect(Math.random()*128,0,w,128);}};const dots=c=>{c.fillStyle='#f4ece2';c.fillRect(0,0,128,128);for(let i=0;i<400;i++){c.fillStyle=`rgba(120,90,70,${Math.random()*.12})`;c.beginPath();c.arc(Math.random()*128,Math.random()*128,1+Math.random()*2,0,7);c.fill();}};
- _PT={fabric:canvasTex(c=>{c.fillStyle='#f5f5f5';c.fillRect(0,0,128,128);c.fillStyle='rgba(90,90,90,.18)';for(let i=0;i<128;i+=4){c.fillRect(0,i,128,1);c.fillRect(i,0,1,128);}}),skin:canvasTex(dots),fur:canvasTex(c=>{c.fillStyle='#f0f0f0';c.fillRect(0,0,128,128);for(let i=0;i<240;i++){c.strokeStyle=`rgba(80,70,60,${.15+Math.random()*.25})`;c.beginPath();const x=Math.random()*128;c.moveTo(x,Math.random()*60);c.lineTo(x+3-Math.random()*6,128);c.stroke();}}),scales:canvasTex(c=>{c.fillStyle='#eef2ee';c.fillRect(0,0,128,128);c.strokeStyle='rgba(40,60,40,.35)';for(let r=0;r<8;r++)for(let i=0;i<8;i++){c.beginPath();c.arc(i*16+(r%2)*8,r*16,10,0,Math.PI);c.stroke();}}),feather:canvasTex(c=>{c.fillStyle='#f6f6f6';c.fillRect(0,0,128,128);c.strokeStyle='rgba(90,90,90,.3)';c.beginPath();c.moveTo(64,0);c.lineTo(64,128);c.stroke();for(let i=0;i<20;i++){c.beginPath();c.moveTo(64,i*7);c.lineTo(64+(i%2?34:-34),i*7+16);c.stroke();}})};return _PT;}
+ _PT={metal:canvasTex(c=>{const g=c.createLinearGradient(0,0,128,128);g.addColorStop(0,'#ffffff');g.addColorStop(.5,'#c8c8c8');g.addColorStop(1,'#eeeeee');c.fillStyle=g;c.fillRect(0,0,128,128);for(let i=0;i<60;i++){c.fillStyle=`rgba(255,255,255,${Math.random()*.25})`;c.fillRect(0,Math.random()*128,128,1);}c.strokeStyle='rgba(40,40,40,.45)';c.lineWidth=2;c.strokeRect(3,3,122,122);c.fillStyle='rgba(50,50,50,.55)';for(const [x,y] of [[10,10],[118,10],[10,118],[118,118]]){c.beginPath();c.arc(x,y,3,0,7);c.fill();}}),fabric:canvasTex(c=>{c.fillStyle='#f5f5f5';c.fillRect(0,0,128,128);c.fillStyle='rgba(90,90,90,.18)';for(let i=0;i<128;i+=4){c.fillRect(0,i,128,1);c.fillRect(i,0,1,128);}}),skin:canvasTex(dots),fur:canvasTex(c=>{c.fillStyle='#f0f0f0';c.fillRect(0,0,128,128);for(let i=0;i<240;i++){c.strokeStyle=`rgba(80,70,60,${.15+Math.random()*.25})`;c.beginPath();const x=Math.random()*128;c.moveTo(x,Math.random()*60);c.lineTo(x+3-Math.random()*6,128);c.stroke();}}),scales:canvasTex(c=>{c.fillStyle='#eef2ee';c.fillRect(0,0,128,128);c.strokeStyle='rgba(40,60,40,.35)';for(let r=0;r<8;r++)for(let i=0;i<8;i++){c.beginPath();c.arc(i*16+(r%2)*8,r*16,10,0,Math.PI);c.stroke();}}),feather:canvasTex(c=>{c.fillStyle='#f6f6f6';c.fillRect(0,0,128,128);c.strokeStyle='rgba(90,90,90,.3)';c.beginPath();c.moveTo(64,0);c.lineTo(64,128);c.stroke();for(let i=0;i<20;i++){c.beginPath();c.moveTo(64,i*7);c.lineTo(64+(i%2?34:-34),i*7+16);c.stroke();}})};return _PT;}
 const TMAT={};function tmat(c,kind,o={}){if(GQ==='low')return mat(c,o);const key=c+'|'+kind+'|'+JSON.stringify(o);if(TMAT[key])return TMAT[key];const t=ptex()[kind]||null;const m=new THREE.MeshStandardMaterial({color:c,map:t,roughness:o.r??.85,metalness:o.m||0,emissive:o.e?new THREE.Color(o.e):new THREE.Color(0),emissiveIntensity:o.ei??.6});TMAT[key]=m;return m;}
 const BX=new THREE.BoxGeometry(1,1,1),RB=GQ==='low'?BX:new RoundedBoxGeometry(1,1,1,3,.22),SP=new THREE.SphereGeometry(1,GQ==='low'?12:20,GQ==='low'?9:14),CN=new THREE.ConeGeometry(1,1,8),CY=new THREE.CylinderGeometry(1,1,1,8);
 // biped: o={skin,shirt,pants,hair,scale,bulk,hat,horns,crown,fur,emis,skirt,staff,cape}
@@ -126,6 +126,14 @@ function makeHuman(o={}){const root=new THREE.Group(),body=joint(root,0,0,0);con
  part(torso,CY,shirt,0,.66,0,.16*bk,.1,.16*bk);
  if(o.scarf){const sm=tmat(o.scarf,'fabric');const sc2=part(torso,CY,sm,0,.68,0,.19*bk,.13,.19*bk);part(torso,RB,sm,.1,.5,.14,.12,.26,.04);}
  if(o.skirt)part(torso,CN,tmat(o.skirt,'fabric',em),0,-.22,0,.44*bk,.78,.44*bk);
+ const EQV=o.eq||{};const setMat=set=>{const D={hide:[0x8a6a42,'fabric',0],leaf:[0x3f9e4d,'fabric',0],iron:[0x8e98a2,'metal',.5],gold:[0xd8b038,'metal',.45],obsidian:[0x4a3a62,'metal',.3],vine:[0x2e7a2e,'fabric',0],snow_wolf:[0xeef2f4,'fur',0],ember:[0x33201a,'metal',.2],thorn:[0x5a7a2a,'fabric',0],cold:[0x8fd0f0,'fur',0],heat:[0xe0a040,'fabric',0]}[set]||[0x888888,'fabric',0];return D;};
+ const eqMat=(set,broken)=>{const [c,kind,mt]=setMat(set);return broken?mat(0x4a423c,{r:.9}):(mt?(GQ==='low'?mat(c,{m:.2,r:.35}):tmat(c,kind,{m:mt,r:.32})):tmat(c,kind));};
+ if(EQV.chest){const cm=eqMat(EQV.chest.s,EQV.chest.b);part(torso,SP,cm,0,.38,-.01,.31*bk,.35,.2*bk);part(torso,RB,cm,0,.36,-.01,.56*bk,.6,.36*bk);part(torso,RB,cm,-.33*bk,.6,0,.18,.16,.33);part(torso,RB,cm,.33*bk,.6,0,.18,.16,.33);
+  if(EQV.chest.s==='ember'&&!EQV.chest.b)for(let i=0;i<4;i++)part(torso,RB,mat(0xff5a18,{e:0xff4400,ei:1.6}),rnd(-.18,.18),rnd(.15,.55),.19,.035,rnd(.1,.24),.012);
+  if(EQV.chest.s==='leaf')for(let i=0;i<5;i++){const lf=part(torso,CN,mat(0x46b04a),rnd(-.2,.2),rnd(.15,.55),.18,.09,.22,.03);lf.rotation.x=.4;}
+  if(EQV.chest.s==='thorn')for(const sd of[-1,1])for(let i=0;i<3;i++){const sp=part(torso,CN,mat(0x86a03a),sd*.3,.62-i*.16,.02,.05,.2,.05);sp.rotation.z=-sd*1.1;}}
+ if(EQV.legs){const lm=eqMat(EQV.legs.s,EQV.legs.b);for(const lg of [L1,L2]){part(lg.hip,RB,lm,0,-.22,0,.19*bk,.46,.21*bk);part(lg.knee,RB,lm,0,-.18,0,.16*bk,.36,.18*bk);}}
+ if(EQV.boots){const bm=eqMat(EQV.boots.s,EQV.boots.b);for(const lg of [L1,L2]){part(lg.knee,SP,bm,0,-.4,.05,.12*bk,.08,.19*bk);part(lg.knee,RB,bm,0,-.42,.07,.2*bk,.1,.28);}}
  if(o.armor){const am=mat(o.armor,{m:o.armor>0xaaaaaa?.6:.3,r:.38});part(torso,SP,am,0,.38,-.01,.3*bk,.33,.19*bk);part(torso,RB,am,0,.38,-.01,.54*bk,.58,.34*bk);part(torso,RB,am,-.33*bk,.6,0,.17,.15,.32);part(torso,RB,am,.33*bk,.6,0,.17,.15,.32);part(torso,RB,mat(0xe0b030,{m:.7}),0,.38,.18,.15,.19,.02);}
  if(o.cape)part(torso,RB,tmat(o.cape,'fabric'),0,.18,-.18*bk,.46*bk,.88,.04);
  // head: neck, rounded skull, jaw, nose, ears, eyes (white+pupil), mouth/brows by expression
@@ -147,7 +155,10 @@ function makeHuman(o={}){const root=new THREE.Group(),body=joint(root,0,0,0);con
   else if(hs==='bun'){part(head,SP,hairM,0,.36,-.14,.13,.13,.13);}
   else if(hs==='mohawk'){part(head,RB,hairM,0,.36,-.02,.08,.26,.3*bk);}
   else if(hs==='curly'){for(let i=0;i<8;i++){const a=i/8*6.28;part(head,SP,hairM,Math.cos(a)*.15,.26,Math.sin(a)*.15,.095,.095,.095);}part(head,SP,hairM,0,.32,0,.11,.11,.11);}}
- if(o.hat==='cap'){const cm=tmat(o.hatCol||0xd84040,'fabric');part(head,SP,cm,0,.2,-.01,.23*bk,.15*bk,.23*bk);part(head,RB,cm,0,.16,.26,.3,.04,.18);}
+ if(EQV.helmet){const hm=eqMat(EQV.helmet.s,EQV.helmet.b);part(head,SP,hm,0,.17,-.01,.24*bk,.2*bk,.24*bk);part(head,CY,hm,0,.06,0,.25*bk,.05,.25*bk);if(EQV.helmet.s==='snow_wolf'||EQV.helmet.s==='cold'){part(head,SP,hm,-.25,.1,0,.06,.1,.06);part(head,SP,hm,.25,.1,0,.06,.1,.06);}
+  if(EQV.helmet.s==='thorn')for(let i=0;i<4;i++){const sp=part(head,CN,mat(0x86a03a),(i-1.5)*.11,.36,0,.04,.16,.04);sp.rotation.z=(1.5-i)*.25;}
+  if(EQV.helmet.s==='ember'&&!EQV.helmet.b)part(head,RB,mat(0xff5a18,{e:0xff4400,ei:1.4}),0,.24,.2,.16,.03,.02);}
+ else if(o.hat==='cap'){const cm=tmat(o.hatCol||0xd84040,'fabric');part(head,SP,cm,0,.2,-.01,.23*bk,.15*bk,.23*bk);part(head,RB,cm,0,.16,.26,.3,.04,.18);}
  else if(o.hat==='explorer'){const cm=tmat(0xc8a86a,'fabric');part(head,CY,cm,0,.22,0,.34,.05,.34);part(head,CN,cm,0,.36,0,.19,.2,.19);part(head,CY,mat(0x6a4a2a),0,.28,0,.21,.06,.21);}
  else if(o.hat==='leaf'){for(let i=0;i<6;i++){const a=i/6*Math.PI*2;const l=part(head,CN,mat(i%2?0x2e8b2e:0x46b04a),Math.cos(a)*.17,.26,Math.sin(a)*.17,.08,.3,.04);l.rotation.z=-Math.cos(a)*.6;l.rotation.x=Math.sin(a)*.6;}}
  else if(o.hat==='fur'){part(head,CY,tmat(0xe8e0d0,'fur'),0,.26,0,.27*bk,.2,.27*bk);part(head,SP,tmat(0xe8e0d0,'fur'),-.24,.12,0,.06,.1,.06);part(head,SP,tmat(0xe8e0d0,'fur'),.24,.12,0,.06,.1,.06);}
@@ -156,8 +167,8 @@ function makeHuman(o={}){const root=new THREE.Group(),body=joint(root,0,0,0);con
  else if(o.hat==='hood')part(head,SP,tmat(o.shirt??0x6a2a1a,'fabric'),0,.12,-.04,.25*bk,.26*bk,.25*bk);
  else if(o.hat==='nemes'){const g=mat(0xd4af37,{m:.5,r:.3}),b2=mat(0x1a3a8a);part(head,RB,g,0,.18,-.05,.5,.25,.42);part(head,RB,b2,-.2,-.08,-.02,.1,.4,.3);part(head,RB,b2,.2,-.08,-.02,.1,.4,.3);part(head,CN,g,0,.38,0,.12,.18,.12);}
  else if(o.hat==='leaves'){for(let i=0;i<7;i++){const a=i/7*Math.PI*2;const l=part(head,CN,mat(0x3ab03a),Math.cos(a)*.2,.28,Math.sin(a)*.2,.07,.35,.04);l.rotation.z=-Math.cos(a)*.5;l.rotation.x=Math.sin(a)*.5;}}
- if(o.horns){const hm=mat(o.horns);for(const sd of[-1,1]){const h=part(head,CN,hm,sd*.22*bk,.28,0,.07,.3,.07);h.rotation.z=-sd*.6;}}
- if(o.crown){const g=mat(0xffd040,{m:.6,r:.3,e:0x553300,ei:.4});part(head,CY,g,0,.34*bk,0,.19*bk,.08,.19*bk);for(let i=0;i<5;i++){const a=i/5*Math.PI*2;part(head,CN,g,Math.cos(a)*.16*bk,.42*bk,Math.sin(a)*.16*bk,.04,.12,.04);}}
+ if(!EQV.helmet&&o.horns){const hm=mat(o.horns);for(const sd of[-1,1]){const h=part(head,CN,hm,sd*.22*bk,.28,0,.07,.3,.07);h.rotation.z=-sd*.6;}}
+ if(!EQV.helmet&&o.crown){const g=mat(0xffd040,{m:.6,r:.3,e:0x553300,ei:.4});part(head,CY,g,0,.34*bk,0,.19*bk,.08,.19*bk);for(let i=0;i<5;i++){const a=i/5*Math.PI*2;part(head,CN,g,Math.cos(a)*.16*bk,.42*bk,Math.sin(a)*.16*bk,.04,.12,.04);}}
  if(o.fur)for(let i=0;i<10;i++)part(torso,SP,tmat(o.fur,'fur'),rnd(-.25,.25)*bk,rnd(.05,.65),rnd(-.14,.14)*bk,.12,.13,.12);
  if(o.cracks)for(let i=0;i<6;i++)part(torso,RB,mat(0xff7a20,{e:0xff5a00,ei:2}),rnd(-.2,.2)*bk,rnd(.1,.55),.16*bk,.04,rnd(.12,.3),.01);
  // arms: shoulder -> upper -> elbow -> forearm + shaped mitten hand
@@ -231,12 +242,12 @@ const TICON={axe:'🪓',pickaxe:'⛏️',sword:'🗡️'};
 TIERS.forEach(([t,,n])=>{for(const k of ['axe','pickaxe','sword'])ITEMS[t+'_'+k]=TICON[k]+' '+n+' '+k;});Object.assign(ITEMS,{spike_barricade:'🔺 Spike barricade',gate:'🚪 Stone gate',iron_wall:'🧱 Iron wall',watchtower:'🗼 Watchtower',turret:'🎯 Ballista turret',flame_trap:'♨️ Flame trap',tar_pit:'⚫ Tar pit',bear_trap:'🐻 Bear trap',alarm_bell:'🔔 Alarm bell',shield:'🔰 Shield',scarecrow:'🎃 Scarecrow',trench:'🌊 Water trench',gem:'💎 Gem',torch_post:'🔥 Standing torch',lamp_post:'🏮 Lamp post'});
 const ICON=k=>(ITEMS[k]||'❔').split(' ')[0];const nm=k=>ITEMS[k]||k;
 const PLACE=['rug','table','flower_pot','sign_post','path_stones','campfire','bench','tent','bed','chest','fence','wall','trap','torch_post','lamp_post','spike_barricade','gate','iron_wall','watchtower','turret','flame_trap','tar_pit','bear_trap','alarm_bell','scarecrow','trench','thorn_wall','guardian_totem'];
-const SINGLE=k=>/_(axe|pickaxe|sword|armor)$/.test(k)||['spear','bow','cold_gear','heat_gear','waterskin','lantern','shield','guard_shield','crown','frost_blade','vine_armor','sun_amulet','magma_hammer'].includes(k);
+const SINGLE=k=>/_(axe|pickaxe|sword|armor|helmet|chest|legs|boots)$/.test(k)||['spear','bow','cold_gear','heat_gear','waterskin','lantern','shield','guard_shield','crown','frost_blade','vine_armor','sun_amulet','magma_hammer'].includes(k);
 const FOOD={cooked_meat:[35,8],berries:[10,0],raw_meat:[12,-5],cactus_fruit:[15,0],stew:[60,15],healing_fruit:[12,40],berry_pie:[30,15],meat_skewer:[40,10],raw_fish:[8,-3],grilled_fish:[32,12]};
 const NSLOT=36;let slots=new Array(NSLOT).fill(null),selHot=0,coins=0;
 const cnt=k=>{let n=0;for(const s of slots)if(s&&s.k===k)n+=s.n;return n;};
 function addItem(k,n){if(n>0){const mx=SINGLE(k)?1:64;for(const s of slots)if(s&&s.k===k&&s.n<mx){const d=Math.min(n,mx-s.n);s.n+=d;n-=d;if(!n)break;}
-  for(let i=0;i<NSLOT&&n>0;i++)if(!slots[i]){const d=Math.min(n,mx);slots[i]={k,n:d};n-=d;}if(n>0)toast('🎒 Bag full! Lost '+n+' '+nm(k));}
+  for(let i=0;i<NSLOT&&n>0;i++)if(!slots[i]){const d=Math.min(n,mx);slots[i]={k,n:d};if(armorInfo&&armorInfo(k))slots[i].dur=armorMaxDur(k);n-=d;}if(n>0)toast('🎒 Bag full! Lost '+n+' '+nm(k));}
  else{n=-n;for(let i=NSLOT-1;i>=0&&n>0;i--){const s=slots[i];if(s&&s.k===k){const d=Math.min(n,s.n);s.n-=d;n-=d;if(!s.n)slots[i]=null;}}}}
 let inv=new Proxy({},{get:(_,k)=>typeof k==='string'?(cnt(k)||undefined):undefined,set:(_,k,v)=>{addItem(k,(v|0)-cnt(k));return true;},deleteProperty:(_,k)=>{addItem(k,-cnt(k));return true;},
  has:(_,k)=>cnt(k)>0,ownKeys:()=>[...new Set(slots.filter(Boolean).map(s=>s.k))],getOwnPropertyDescriptor:(_,k)=>cnt(k)>0?{value:cnt(k),enumerable:true,configurable:true,writable:true}:undefined});
@@ -247,7 +258,40 @@ const pickLvl=()=>tierOf('pickaxe');const axeLvl=()=>tierOf('axe');
 const WEAP={fists:{d:6,r:1.7},spear:{d:16,r:3},machete:{d:30,r:2.1},trident:{d:44,r:2.7},frost_blade:{d:58,r:2.5},magma_hammer:{d:70,r:2.4},lava_sword:{d:64,r:2.4,burn:1}};
 TIERS.forEach(([t],i)=>{WEAP[t+'_sword']={d:[10,16,26,34,46][i],r:2.2+i*.05};WEAP[t+'_axe']={d:[7,9,13,17,22][i],r:1.9};WEAP[t+'_pickaxe']={d:[5,7,10,13,17][i],r:1.9};});
 function bestWeapon(){let b='fists';for(const k in WEAP)if(k!=='fists'&&has(k)&&WEAP[k].d>WEAP[b].d)b=k;return b;}
-const armorPct=()=>has('vine_armor')?.65:has('obsidian_armor')?.6:has('gold_armor')?.5:has('ember_armor')?.5:has('snow_wolf_armor')?.45:has('iron_armor')?.4:has('thorn_armor')?.35:has('leaf_armor')?.25:has('hide_armor')?.2:0;
+// ---------- Release 18: Minecraft-style armor (4 pieces, points, durability) ----------
+const ASETS={hide:{n:'Hide',col:0x8a6a42,dur:70,pts:[1,3,2,1],rep:'hide',tier:2},leaf:{n:'Leaf',col:0x3f9e4d,dur:55,pts:[1,3,2,1],rep:'fiber',tier:1},iron:{n:'Iron',col:0xaab4be,dur:190,pts:[2,5,4,2],rep:'iron',tier:3,metal:1},gold:{n:'Gold',col:0xd8a820,dur:120,pts:[2,5,3,2],rep:'gold',tier:3,metal:1},obsidian:{n:'Obsidian',col:0x2a1e3a,dur:270,pts:[3,6,5,3],rep:'obsidian',tier:4,metal:1},vine:{n:'Vine',col:0x2e7a2e,dur:230,pts:[3,7,5,3],rep:'hide',tier:4},snow_wolf:{n:'Snow Wolf',col:0xeef2f4,dur:170,pts:[2,5,4,2],rep:'hide',tier:3},ember:{n:'Ember',col:0x33201a,dur:250,pts:[3,6,5,3],rep:'obsidian',tier:4},thorn:{n:'Thorn',col:0x5a7a2a,dur:150,pts:[2,5,3,2],rep:'fiber',tier:3},cold:{n:'Cold Gear',col:0x7fd0ff,dur:150,pts:[2,4,3,2],rep:'hide',tier:2},heat:{n:'Heat Gear',col:0xe0a040,dur:150,pts:[2,4,3,2],rep:'fiber',tier:3}};
+const ASLOTS=['helmet','chest','legs','boots'],APART={helmet:'Helmet',chest:'Chestplate',legs:'Leggings',boots:'Boots'},APICON={helmet:'⛑️',chest:'🦺',legs:'👖',boots:'🥾'};
+let EQ={helmet:null,chest:null,legs:null,boots:null};
+function armorInfo(k){if(!k)return null;for(const set in ASETS)for(let i=0;i<4;i++)if(k===set+'_'+ASLOTS[i])return{set,slot:ASLOTS[i],idx:i};
+ if(k==='cold_gear')return{set:'cold',slot:'chest',idx:1,legacy:1};if(k==='heat_gear')return{set:'heat',slot:'chest',idx:1,legacy:1};
+ if(k.endsWith('_armor')){const set=k.slice(0,-6);if(ASETS[set])return{set,slot:'chest',idx:1,legacy:1};}return null;}
+function armorMaxDur(k){const inf=armorInfo(k);if(!inf)return 0;return Math.round(ASETS[inf.set].dur*[.8,1.15,.95,.7][inf.idx]);}
+function armorPiecePts(pc){if(!pc||pc.dur<=0)return 0;const inf=armorInfo(pc.k);return inf?ASETS[inf.set].pts[inf.idx]:0;}
+function armorPoints(){return ASLOTS.reduce((a,sl)=>a+armorPiecePts(EQ[sl]),0);}
+function eqSetCount(set){return ASLOTS.filter(sl=>EQ[sl]&&EQ[sl].dur>0&&armorInfo(EQ[sl].k)?.set===set).length;}
+function fullSet(set){return eqSetCount(set)===4;}
+const armorPct=()=>Math.min(.65,armorPoints()*.03)+(fullSet('ember')?.03:0)+(fullSet('vine')?.03:0);
+function coldResist(){return has('cold_gear')||eqSetCount('cold')>0||eqSetCount('snow_wolf')>0;}
+function heatResist(){return has('heat_gear')||eqSetCount('heat')>0||eqSetCount('ember')>0;}
+function setBonusLines(){const out=[];if(fullSet('ember'))out.push('🌋 Full Ember set: fire & heat resistant');if(fullSet('heat'))out.push('🥵 Full Heat set: desert & lava resistant');if(fullSet('snow_wolf'))out.push('🐺 Full Snow Wolf set: cold resistant');if(fullSet('cold'))out.push('🧥 Full Cold set: snow resistant');if(fullSet('thorn'))out.push('🌵 Full Thorn set: spiky — attackers feel it');if(fullSet('vine'))out.push('🌿 Full Vine set: +3% protection');if(fullSet('leaf'))out.push('🍃 Full Leaf set: light forest weave');return out;}
+function armorSig(){return ASLOTS.map(sl=>EQ[sl]?EQ[sl].k+':'+(EQ[sl].dur<=0?'b':''):'-').join('|');}
+function addArmorToBag(k,dur){for(let i=0;i<NSLOT;i++)if(!slots[i]){slots[i]={k,n:1,dur:dur??armorMaxDur(k)};return true;}return false;}
+function equipArmorFromSlot(i){const sl=slots[i];if(!sl)return false;const inf=armorInfo(sl.k);if(!inf)return false;const slot=inf.slot;const old=EQ[slot];
+ if(old&&!slots.some(x=>!x)&&slots[i]===sl&&NSLOT&&slots.filter(x=>!x).length<1){/* swap uses this slot, fine */}
+ slots[i]=null;EQ[slot]={k:sl.k,dur:sl.dur??armorMaxDur(sl.k)};if(old)addArmorToBag(old.k,old.dur);
+ sfx.craft();toast('🛡️ Equipped '+nm(sl.k),1.2);afterArmorChange();return true;}
+function unequipArmor(slot){const pc=EQ[slot];if(!pc)return false;if(!addArmorToBag(pc.k,pc.dur)){toast('🎒 Bag full!');return false;}EQ[slot]=null;sfx.craft();afterArmorChange();return true;}
+function afterArmorChange(){if(P.fig)applyChar(false);updArmorBar();if(!$('bag').classList.contains('hidden'))renderBag();save();}
+function repairArmor(slot,useKit){const pc=EQ[slot];if(!pc)return;const inf=armorInfo(pc.k),mx=armorMaxDur(pc.k);if(pc.dur>=mx)return toast('Already fully repaired');
+ if(useKit){if(!has('repair_kit'))return toast('You need a 🧰 Repair Kit');addItem('repair_kit',-1);pc.dur=mx;toast('🧰 '+nm(pc.k)+' fully repaired!');}
+ else{const rep=ASETS[inf.set].rep;if(!has(rep))return toast('Need 1 '+nm(rep)+' to repair (or use a Repair Kit)');addItem(rep,-1);pc.dur=Math.min(mx,pc.dur+Math.ceil(mx*.5));toast('🔧 Repaired '+nm(pc.k)+' (+50%)');}
+ tone(700,.1,'triangle',.12);afterArmorChange();}
+function wearArmor(rawD){if(rawD<2)return;P._wear=(P._wear||0)+rawD;if(P._wear<7)return;P._wear=0;let broke=false;
+ for(const sl of ASLOTS){const pc=EQ[sl];if(pc&&pc.dur>0){pc.dur-=1;if(pc.dur<=0){pc.dur=0;broke=true;toast('💥 Your '+nm(pc.k)+' broke! It no longer protects you — repair it at a bench/bag.',3);tone(160,.25,'sawtooth',.18,60);}}}
+ if(broke)afterArmorChange();else updArmorBar();}
+function updArmorBar(){const el=$('armorBar');if(!el)return;const pts=armorPoints();let shields='';for(let i=0;i<10;i++)shields+=i<Math.round(pts/2)?'🛡️':'▫️';
+ const worn=ASLOTS.some(sl=>EQ[sl]&&EQ[sl].dur<armorMaxDur(EQ[sl].k)*.35);
+ el.innerHTML=pts>0?shields+' <span style="letter-spacing:0">'+pts+' · '+Math.round(armorPct()*100)+'%'+(worn?' ⚠️':'')+'</span>':'';el.style.display=pts>0?'':'none';document.body.classList.toggle('armored',pts>0);}
 // recipes: pattern rows (shaped, mirror ok) or list (shapeless). tier: 0 = 2x2 in bag, 1-4 = bench tier.
 const RECIPES=[
  {out:'planks',n:4,list:['wood'],tier:0,d:'1 log → 4 planks'},
@@ -267,18 +311,21 @@ const RECIPES=[
  {out:'wall',n:2,pat:['RR','RR'],key:{R:'stone'},tier:2},
  {out:'trap',pat:['S S','RIR'],key:{S:'stick',R:'stone',I:'iron'},tier:2,d:'Hurts monsters, catches small game'},
  {out:'bed',pat:['HHH','PPP'],key:{H:'hide',P:'planks'},tier:2,d:'Sleep & respawn'},
- {out:'hide_armor',pat:['H H','HHH','HHH'],key:{H:'hide'},tier:2,d:'Blocks 20%'},
- {out:'cold_gear',pat:['H H','HFH','HHH'],key:{H:'hide',F:'fiber'},tier:2,d:'Survive the snow'},
- {out:'iron_armor',pat:['I I','III','III'],key:{I:'iron'},tier:3,d:'Blocks 40%'},
- {out:'heat_gear',pat:['FIF','HHH','FHF'],key:{F:'fiber',I:'iron',H:'hide'},tier:3,d:'Survive desert & lava'},
  {out:'lantern',pat:[' I ','ITI',' I '],key:{I:'iron',T:'torch'},tier:3,d:'Bright light, lasts forever'},
- {out:'gold_armor',pat:['G G','GGG','GGG'],key:{G:'gold'},tier:3,d:'Blocks 50%'},
- {out:'obsidian_armor',pat:['O O','OOO','OOO'],key:{O:'obsidian'},tier:4,d:'Blocks 60%'},
  {out:'frost_blade',pat:['C','Y','S'],key:{C:'crystal',Y:'yeti_fang',S:'stick'},tier:4,d:'58 damage'},
- {out:'vine_armor',pat:['HHH','HVH','HHH'],key:{H:'hide',V:'vine_heart'},tier:4,d:'Blocks 65%'},
  {out:'sun_amulet',pat:['GGG','GAG',' G '],key:{G:'gold',A:'pharaoh_ankh'},tier:4,d:'Fast health regen'},
  {out:'magma_hammer',pat:['OMO',' S ',' S '],key:{O:'obsidian',M:'magma_core',S:'stick'},tier:4,d:'70 damage'}];
 const TTIER=[1,1,2,3,4];
+// armor piece recipes (Minecraft shapes: helmet 5, chest 8, legs 7, boots 4)
+const ASETMAT={hide:'hide',leaf:'fiber',iron:'iron',gold:'gold',obsidian:'obsidian',vine:'hide',snow_wolf:'hide',ember:'obsidian',thorn:'fiber',cold:'hide',heat:'fiber'};
+for(const set in ASETMAT){const M=ASETMAT[set],T=ASETS[set].tier;
+ RECIPES.push({out:set+'_helmet',pat:['MMM','M M'],key:{M},tier:T,d:ASETS[set].pts[0]+' armor pts · equip in bag (right-click)'});
+ if(set==='vine')RECIPES.push({out:'vine_chest',pat:['HHH','HVH','HHH'],key:{H:'hide',V:'vine_heart'},tier:4,d:ASETS.vine.pts[1]+' armor pts · Vine Queen treasure weave'});
+ else if(set==='snow_wolf')RECIPES.push({out:'snow_wolf_chest',pat:['FHF','HHH','H H'],key:{H:'hide',F:'fiber'},tier:3,d:ASETS.snow_wolf.pts[1]+' armor pts · full set = cold resist'});
+ else if(set==='ember')RECIPES.push({out:'ember_chest',pat:['O O','OIO','OOO'],key:{O:'obsidian',I:'iron'},tier:4,d:ASETS.ember.pts[1]+' armor pts · full set = fire/heat resist'});
+ else RECIPES.push({out:set+'_chest',pat:['M M','MMM','MMM'],key:{M},tier:T,d:ASETS[set].pts[1]+' armor pts · equip in bag (right-click)'});
+ RECIPES.push({out:set+'_legs',pat:['MMM','M M','M M'],key:{M},tier:T,d:ASETS[set].pts[2]+' armor pts'});
+ RECIPES.push({out:set+'_boots',pat:['M M','M M'],key:{M},tier:T,d:ASETS[set].pts[3]+' armor pts'});}
 TIERS.forEach(([t,m],i)=>{RECIPES.push({out:t+'_axe',pat:['MM','MS',' S'],key:{M:m,S:'stick'},tier:TTIER[i]},{out:t+'_pickaxe',pat:['MMM',' S ',' S '],key:{M:m,S:'stick'},tier:TTIER[i]},{out:t+'_sword',pat:['M','M','S'],key:{M:m,S:'stick'},tier:TTIER[i]});});
 RECIPES.push(
  {out:'spike_barricade',pat:['S S','PPP'],key:{S:'stick',P:'planks'},tier:1,d:'Blocks & stabs attackers'},
@@ -297,9 +344,6 @@ RECIPES.push(
  {out:'machete',pat:[' II',' I ','S  '],key:{I:'iron',S:'stick'},tier:2,d:'Fast jungle blade, 30 dmg'},
  {out:'trident',pat:[' I ','III',' S '],key:{I:'iron',S:'stick'},tier:3,d:'Long reach, 44 dmg'},
  {out:'crossbow',pat:['SIS',' F ','S S'],key:{S:'stick',I:'iron',F:'fiber'},tier:3,d:'Powerful ranged weapon — uses arrows, hits harder than a bow'},
- {out:'leaf_armor',pat:['F F','FFF','FFF'],key:{F:'fiber'},tier:1,d:'Blocks 25% · light forest weave'},
- {out:'snow_wolf_armor',pat:['FHF','HHH','H H'],key:{H:'hide',F:'fiber'},tier:3,d:'Blocks 45% · counts as cold gear in the snow'},
- {out:'ember_armor',pat:['O O','OIO','OOO'],key:{O:'obsidian',I:'iron'},tier:4,d:'Blocks 50% · counts as heat gear in desert & lava'},
  {out:'berry_pie',list:['berries','berries','berries','fiber'],tier:1,d:'+30 hunger, +15 health'},
  {out:'meat_skewer',list:['raw_meat','raw_meat','stick'],tier:1,d:'+40 hunger, +10 health'},
  {out:'grilled_fish',list:['raw_fish','raw_fish'],tier:1,d:'+32 hunger, +12 health — catch fish with a rod!'},
@@ -615,7 +659,8 @@ const MP={on:false,host:false,mock:false,peer:null,conn:null,code:'',remote:null
   if(d.t==='hello'){this.themName=d.name||'Friend';this.remoteName=this.themName;if(!this.host&&d.host){if(d.mode&&d.mode!==MODE){MODE=d.mode;updModeCards();toast('🌐 Host is playing '+MODE+' mode — matched!',3);}}
    if(this.host)this.send({t:'snapshot',structs:this.snapshot()});this.progress();toast('🌐 '+this.themName+' is here! Wave with the emote buttons 👋',3);}
   else if(d.t==='snapshot'){for(const sd of d.structs||[])this.applyStruct(sd);if(!this.host)this.send({t:'snapshot',structs:this.snapshot()});}
-  else if(d.t==='pos'){if(!this.remote){const fig=makeHuman(d.look||{shirt:0xd84a20});scene.add(fig);this.remote={fig,x:d.x,z:d.z};toast('👥 '+this.themName+' appeared!',2);}
+  else if(d.t==='pos'){const sig=JSON.stringify(d.look&&d.look.eq||{});if(!this.remote){const fig=makeHuman(d.look||{shirt:0xd84a20});scene.add(fig);this.remote={fig,x:d.x,z:d.z,sig};toast('👥 '+this.themName+' appeared!',2);}
+   else if(this.remote.sig!==sig){this.remote.sig=sig;const old2=this.remote.fig;scene.remove(old2);this.remote.fig=makeHuman(d.look||{shirt:0xd84a20});scene.add(this.remote.fig);}
    this.remote.x=d.x;this.remote.z=d.z;this.remote.fig.position.set(d.x,H(d.x,d.z)+(d.jy||0),d.z);this.remote.fig.rotation.y=d.dir||0;rigTick(this.remote.fig,.05);}
   else if(d.t==='emote'){if(this.remote)floatTxt(this.remote.x,this.remote.z,d.e,'#fff');toast(this.themName+' '+d.e,1.5);}
   else if(d.t==='struct')this.applyStruct(d.s);
@@ -927,7 +972,7 @@ const P={jy:0,vy:0,x:0,z:3,dir:Math.PI,hp:100,maxHp:100,hearts:0,torchOn:true,hu
 let dayT=40,day=1,paused=true,running=false,shake=0,toolHeld=null;
 let MODE=['discovery','decorative'].includes(localStorage.getItem('cq_mode'))?localStorage.getItem('cq_mode'):'discovery',ratedShown=false;
 const DAY=300;const phase=()=>(dayT%DAY)/DAY;const night=()=>{const p=phase();return p>.72||p<.04;};
-function hurtPlayer(d,src){if(P.dead||paused)return;d*=1-armorPct();if(P.blocking){d*=has('guard_shield')?.18:.35;floatTxt(P.x,P.z,'🔰 block','#9cf');}P.hp-=d;P.hurtT=.3;sfx.hurt();floatTxt(P.x,P.z,'-'+Math.round(d),'#f44');if(P.hp<=0)die();}
+function hurtPlayer(d,src){if(P.dead||paused)return;wearArmor(d);d*=1-armorPct();if(P.blocking){d*=has('guard_shield')?.18:.35;floatTxt(P.x,P.z,'🔰 block','#9cf');}P.hp-=d;P.hurtT=.3;sfx.hurt();floatTxt(P.x,P.z,'-'+Math.round(d),'#f44');if(P.hp<=0)die();}
 function die(){P.dead=true;P.hp=0;MP.deaths++;MP.progress();rigOnce(P.fig,'death',1);toast('💀 You fainted… waking at '+(P.spawn[0]===0&&P.spawn[1]===3?'the forest clearing':'your tent'),3);const lost=Math.floor((inv.raw_meat||0)/2);if(lost)add('raw_meat',-lost);
  setTimeout(()=>{P.dead=false;P.x=P.spawn[0];P.z=P.spawn[1];P.hp=Math.round(P.maxHp*.7);P.hunger=Math.max(P.hunger,50);P.thirst=Math.max(P.thirst,50);P.temp=100;rigReset(P.fig);rigSet(P.fig,'idle');},2600);}
 function equipVisual(){const w=bestWeapon(),t=lightsOn()&&(has('torch')||has('lantern'))&&P.torchOn?'torch':(w==='fists'?null:w);if(t===toolHeld)return;toolHeld=t;const h=P.fig.userData.rig.hand;if(P.tool){h.remove(P.tool);}P.tool=null;if(t){P.tool=toolMesh(t);h.add(P.tool);}}
@@ -972,10 +1017,16 @@ let bagTab='bag',cg=new Array(9).fill(null),held=null,dragFrom=null;
 const benchNear=()=>nearestStruct('bench',5);const curTier=()=>{const b=benchNear();return b?(b.tier||1):0;};const gsz=()=>benchNear()?3:2;
 function openBag(tab){if(tab==='craft')tab='bag';if(tab==='inv')tab='bag';bagTab=tab||bagTab;paused=true;$('bag').classList.remove('hidden');renderBag();}
 function closeBag(){for(const c of cg)if(c)addItem(c.k,c.n);cg.fill(null);if(held){addItem(held.k,held.n);held=null;}$('heldIcon').classList.add('hidden');$('bag').classList.add('hidden');paused=false;}
-function slotHTML(s,id,extra=''){return `<div class="sl ${extra}" data-s="${id}">${s?`<span>${ICON(s.k)}</span>${s.n>1?`<i>${s.n}</i>`:''}`:''}</div>`;}
+function slotHTML(s,id,extra=''){let dur='';if(s&&s.dur!==undefined&&armorInfo(s.k)){const pc=Math.max(0,s.dur/armorMaxDur(s.k));dur=`<u style="position:absolute;left:4px;right:4px;bottom:3px;height:4px;background:#000;border-radius:2px"><u style="display:block;height:100%;width:${pc*100}%;background:${pc<.3?'#e74c3c':pc<.6?'#f1c40f':'#7fe870'};border-radius:2px"></u></u>`;}
+ return `<div class="sl ${extra}" data-s="${id}">${s?`<span>${ICON(s.k)}</span>${s.n>1?`<i>${s.n}</i>`:''}${dur}`:''}</div>`;}
 function renderBag(){for(const t of ['bag','book','quests'])$('t_'+t).classList.toggle('on',bagTab===t);const g=gsz(),tier=curTier(),b=benchNear();
  $('benchNote').textContent=b?`🛠️ Crafting bench · Tier ${tier}`:'Bag crafting (2×2) · stand at a bench for 3×3';let h='';
  if(bagTab==='bag'){h+='<div class="invwrap"><div class="lbl">Bag</div><div class="ig">';for(let i=9;i<NSLOT;i++)h+=slotHTML(slots[i],'inv:'+i);h+='</div><div class="lbl">Hotbar</div><div class="ig">';for(let i=0;i<9;i++)h+=slotHTML(slots[i],'inv:'+i,i===selHot?'sel':'');h+='</div></div>';
+  {let doll=`<div class="dollwrap"><div class="lbl">🧍 Armor · paper doll</div>`;for(const sl of ASLOTS){const pc=EQ[sl];const pct=pc?Math.max(0,pc.dur/armorMaxDur(pc.k)):0;
+    doll+=`<div class="sl" data-armor="${sl}" title="${APART[sl]}" style="${pc?(pc.dur<=0?'border-color:#e74c3c;background:#4a1a1a':'border-color:#ffd94d'):''}">${pc?`<span>${ICON(pc.k)}</span><u style="position:absolute;left:4px;right:4px;bottom:3px;height:4px;background:#000;border-radius:2px"><u style="display:block;height:100%;width:${pct*100}%;background:${pc.dur<=0?'#e74c3c':pct<.35?'#f1c40f':'#7fe870'}"></u></u>`:`<span style="opacity:.45;font-size:20px">${APICON[sl]}</span>`}</div><div style="font-size:10px;text-align:center;width:52px">${APART[sl]}${pc?'<br>'+armorPiecePts(pc)+' pts':''}</div>`;}
+   doll+=`<div style="font-size:12.5px;max-width:190px;line-height:1.5">🛡️ <b>${armorPoints()} armor pts</b> · ${Math.round(armorPct()*100)}% less damage<br>${setBonusLines().join('<br>')||'Wear a full matching set for a bonus.'}<br><span style="opacity:.8">Tap a doll slot to unequip · tap a damaged piece's 🔧 to repair (needs its material; Repair Kit = full).</span></div>`;
+   for(const sl of ASLOTS){const pc=EQ[sl];if(pc&&pc.dur<armorMaxDur(pc.k))doll+=`<button data-repair="${sl}">🔧 ${APART[sl]} (${nm(ASETS[armorInfo(pc.k).set].rep).replace(/^\S+ /,'')})</button> <button data-repairkit="${sl}">🧰 Kit</button><br>`;}
+   doll+='</div>';h+=doll;}
   const r=matchGrid(cg,g,tier);h+=`<div class="craftwrap"><div class="lbl">Crafting ${g}×${g}</div><div class="cgrid" style="grid-template-columns:repeat(${g},52px)">`;for(let i=0;i<g*g;i++)h+=slotHTML(cg[i],'grid:'+i);
   h+=`</div><div class="arrow">➜</div>${slotHTML(r?{k:r.out,n:r.n||1}:null,'out',r?'outok':'')}<div class="rn">${r?nm(r.out)+(r.n>1?' ×'+r.n:'')+(r.d?'<br><small>'+r.d+'</small>':''):'Place materials in a pattern'}</div>`;
   if(b&&tier<4){const c=BENCH_UP[tier];const ok=Object.entries(c).every(([k,n])=>has(k,n));h+=`<div class="up"><b>Upgrade bench → Tier ${tier+1}</b><br>${Object.entries(c).map(([k,n])=>`<span class="${has(k,n)?'ok':'no'}">${n} ${nm(k)}</span>`).join(', ')}<br><button id="benchUp" ${ok?'':'disabled'}>Upgrade</button></div>`;}
@@ -991,13 +1042,16 @@ function maxCrafts(r){if(!r||r.tier>curTier()||r.w>gsz()||r.h>gsz())return 0;con
 function craftAll(r){const n=maxCrafts(r);if(!n){toast(r&&(r.tier>curTier()||r.w>gsz()||r.h>gsz())?'Recipe locked or too big for this grid':'Not enough materials to craft '+nm(r?r.out:''));return 0;}const need=recipeNeeds(r);for(const [k,c] of Object.entries(need))add(k,-c*n);addItem(r.out,(r.n||1)*n);sfx.craft();toast('🛠️ Crafted '+((r.n||1)*n)+' × '+nm(r.out).replace(/^\S+ /,'')+' ('+n+' craft'+(n>1?'s':'')+')',2.2);equipVisual();return n;}
 function craftOut(){const r=matchGrid(cg,gsz(),curTier());if(!r)return;for(let i=0;i<gsz()*gsz();i++)if(cg[i]){cg[i].n--;if(!cg[i].n)cg[i]=null;}addItem(r.out,r.n||1);sfx.craft();toast('Crafted '+nm(r.out)+(r.n>1?' ×'+r.n:''),1.3);if(r.out==='campfire'||PLACE.includes(r.out))toast('Crafted '+nm(r.out)+' – select it in the hotbar and use it to place',2.5);equipVisual();}
 function dropInto(id,one){const ref=slotRef(id);if(!ref||!held)return;const [arr,i]=ref;const cur=arr[i];const mx=arr===cg?64:(SINGLE(held.k)?1:64);
- if(!cur){const n=one?1:held.n;arr[i]={k:held.k,n};held.n-=n;}else if(cur.k===held.k){const n=Math.min(one?1:held.n,mx-cur.n);cur.n+=n;held.n-=n;}else if(!one||arr!==cg){arr[i]=held;held=cur;return;}
+ if(!cur){const n=one?1:held.n;arr[i]={k:held.k,n};if(held.dur!==undefined)arr[i].dur=held.dur;held.n-=n;}else if(cur.k===held.k){const n=Math.min(one?1:held.n,mx-cur.n);cur.n+=n;held.n-=n;}else if(!one||arr!==cg){arr[i]=held;held=cur;return;}
  if(held&&held.n<=0)held=null;}
 function pickFrom(id,half){const ref=slotRef(id);if(!ref)return;const [arr,i]=ref;const s=arr[i];if(!s)return;if(half&&s.n>1){const n=Math.ceil(s.n/2);held={k:s.k,n};s.n-=n;}else{held=s;arr[i]=null;}}
 function showHeld(x,y){const el=$('heldIcon');if(!held){el.classList.add('hidden');return;}el.classList.remove('hidden');el.innerHTML=ICON(held.k)+(held.n>1?`<i>${held.n}</i>`:'');if(x!==undefined){el.style.left=(x-22)+'px';el.style.top=(y-22)+'px';}}
 let lastTapR={i:-1,t:0};
 $('bagBody').addEventListener('dblclick',e=>{const c=e.target.closest('[data-rec]');if(c){craftAll(RECIPES[+c.dataset.rec]);renderBag();}});
-$('bagBody').addEventListener('pointerdown',e=>{const al=e.target.closest('[data-all]');if(al&&!al.disabled){craftAll(RECIPES[+al.dataset.all]);renderBag();return;}const rc=e.target.closest('[data-rec]');if(rc&&!e.target.closest('button')){const now=performance.now(),i=+rc.dataset.rec;if(lastTapR.i===i&&now-lastTapR.t<400){lastTapR={i:-1,t:0};craftAll(RECIPES[i]);renderBag();return;}lastTapR={i,t:now};}const f=e.target.closest('[data-fill]');if(f&&!f.disabled){fillRecipe(RECIPES[+f.dataset.fill]);return;}const s=e.target.closest('.sl');if(!s)return;e.preventDefault();const id=s.dataset.s;
+$('bagBody').addEventListener('pointerdown',e=>{const rp=e.target.closest('[data-repair],[data-repairkit]');if(rp){repairArmor(rp.dataset.repair||rp.dataset.repairkit,!!rp.dataset.repairkit);renderBag();return;}
+ const as=e.target.closest('[data-armor]');if(as){const slot=as.dataset.armor;if(held){const inf=armorInfo(held.k);if(inf&&inf.slot===slot){const oldPc=EQ[slot];EQ[slot]={k:held.k,dur:held.dur??armorMaxDur(held.k)};held=oldPc?{k:oldPc.k,n:1,dur:oldPc.dur}:null;afterArmorChange();}else toast(inf?('That goes in the '+APART[inf.slot]+' slot'):'That is not armor');renderBag();showHeld(e.clientX,e.clientY);return;}unequipArmor(slot);renderBag();return;}
+ if(e.button===2){const slEl=e.target.closest('.sl');const ref=slEl&&slEl.dataset.s&&slotRef(slEl.dataset.s);if(ref&&ref[0]===slots){const idx=ref[1];if(slots[idx]&&armorInfo(slots[idx].k)){equipArmorFromSlot(idx);renderBag();return;}}}
+ const al=e.target.closest('[data-all]');if(al&&!al.disabled){craftAll(RECIPES[+al.dataset.all]);renderBag();return;}const rc=e.target.closest('[data-rec]');if(rc&&!e.target.closest('button')){const now=performance.now(),i=+rc.dataset.rec;if(lastTapR.i===i&&now-lastTapR.t<400){lastTapR={i:-1,t:0};craftAll(RECIPES[i]);renderBag();return;}lastTapR={i,t:now};}const f=e.target.closest('[data-fill]');if(f&&!f.disabled){fillRecipe(RECIPES[+f.dataset.fill]);return;}const s=e.target.closest('.sl');if(!s)return;e.preventDefault();const id=s.dataset.s;
  if(id==='out'){craftOut();renderBag();return;}
  if(held){dropInto(id,id.startsWith('grid')&&e.button!==2?true:e.button===2);dragFrom=null;}else{pickFrom(id,e.button===2);dragFrom=held?id:null;}
  renderBag();showHeld(e.clientX,e.clientY);});
@@ -1014,7 +1068,7 @@ $('bagX').onclick=closeBag;
 function renderHot(){const h=$('hotbar');let s='';for(let i=0;i<9;i++){const it=slots[i];s+=`<div class="hs ${i===selHot?'sel':''}" data-h="${i}"><b>${i+1}</b>${it?ICON(it.k):''}<i>${it&&it.n>1?it.n:''}</i></div>`;}if(h.dataset.c!==s){h.innerHTML=s;h.dataset.c=s;}
  const it=slots[selHot];$('heldName').textContent=it?nm(it.k)+(PLACE.includes(it.k)?' – use to place':FOOD[it.k]||it.k==='bandage'?' – use to eat':''):'';}
 $('hotbar').addEventListener('pointerdown',e=>{const d=e.target.closest('.hs');if(!d)return;e.preventDefault();e.stopPropagation();const i=+d.dataset.h;if(i===selHot)useSlot(i);else{selHot=i;equipVisual();}renderHot();});
-function useSlot(i){const s=slots[i];if(!s||P.dead)return;const k=s.k;
+function useSlot(i){const s=slots[i];if(!s||P.dead)return;const k=s.k;if(armorInfo(k)){equipArmorFromSlot(i);renderHot();return;}
  if(FOOD[k]){const [h,hp]=FOOD[k];addItem(k,-1);P.hunger=Math.min(100,P.hunger+h);P.hp=clamp(P.hp+hp,1,P.maxHp);if(k==='cactus_fruit')P.thirst=Math.min(100,P.thirst+20);sfx.eat();return toast('Ate '+nm(k)+(k==='raw_meat'?' (cook it at a campfire!)':''),1.3);}
  if(k==='bandage'){addItem(k,-1);P.hp=Math.min(P.maxHp,P.hp+30);return toast('🩹 +30 health');}
  if(k==='waterskin'){if(P.water<=0)return toast('Waterskin empty – refill at water');P.water--;P.thirst=Math.min(100,P.thirst+30);return toast('💧 '+P.water+' sips left');}
@@ -1024,7 +1078,11 @@ function useSlot(i){const s=slots[i];if(!s||P.dead)return;const k=s.k;
  if(k==='warmth_tonic'){addItem(k,-1);P.temp=100;P.warmT=60;sfx.eat();return toast('♨️ Warm to the core (60 s)');}
  if(k==='fire_tonic'){addItem(k,-1);P.fireT=60;sfx.eat();return toast('🔥 Fireproof! (60 s)');}
  if(k==='fishing_rod'){if(!inPond(P.x,P.z,2.5))return toast('🎣 Stand by a pond to fish');toast('🎣 Casting…',1);setTimeout(()=>{if(Math.random()<.68){add('raw_fish',1);toast('🐟 Caught a Raw Fish! Grill it (recipe book) or eat it raw (bleh)');sfx.win();}else toast('🎣 It slipped away…');},900);return;}
- if(k==='repair_kit'){let n=0;for(const st of structs)if(DEF[st.type]&&st.hp<DEF[st.type].hp&&Math.hypot(st.x-P.x,st.z-P.z)<14){st.hp=DEF[st.type].hp;n++;}if(!n)return toast('No damaged defences within 14 m');addItem(k,-1);sfx.craft();return toast('🧰 Repaired '+n+' defences!');}
+ if(k==='repair_kit'){let n=0;for(const st of structs)if(DEF[st.type]&&st.hp<DEF[st.type].hp&&Math.hypot(st.x-P.x,st.z-P.z)<14){st.hp=DEF[st.type].hp;n++;}
+  const wornA=ASLOTS.filter(sl=>EQ[sl]&&EQ[sl].dur<armorMaxDur(EQ[sl].k));if(!n&&!wornA.length)return toast('Nothing damaged to repair nearby');
+  addItem(k,-1);sfx.craft();if(n&&wornA.length&&confirm('Repair '+n+' defences AND your armor with this kit? (Cancel = defences only)')){for(const sl of wornA)EQ[sl].dur=armorMaxDur(EQ[sl].k);afterArmorChange();return toast('🧰 Repaired '+n+' defences + all armor!');}
+  if(!n){for(const sl of wornA)EQ[sl].dur=armorMaxDur(EQ[sl].k);afterArmorChange();return toast('🧰 Armor fully repaired!');}
+  return toast('🧰 Repaired '+n+' defences!');}
  if(k==='torch'||k==='lantern'){P.torchOn=!P.torchOn;toolHeld='?';return toast((k==='torch'?'Torch ':'Lantern ')+(P.torchOn?'on':'off'));}
  if(k==='wood'){const f=nearestStruct('campfire',3.5);if(f)return fuelFire(f);}
  if(PLACE.includes(k)){if(P.tower)return toast('Climb down first');const pp=placePos(k),x=pp.x,z=pp.z;if(!placeOk(k,pp))return toast('No room to place that here');addItem(k,-1);const st=placeStruct(k,x,z,{rot:pp.rot,tier:k==='bench'?1:undefined,fuel:k==='campfire'?50:undefined});MP.send({t:'struct',s:{type:k,x,z,rot:pp.rot,tier:st.tier,lvl:st.lvl}});if(k==='bed'||k==='tent')P.spawn=[x+1.5,z+1.5];sfx.craft();toast('Placed '+nm(k));save();return;}
@@ -1131,10 +1189,13 @@ $('quit').onclick=()=>{if(confirm('Save and quit to the main menu?')){try{MUS.se
 $('winOk').onclick=()=>{$('win').classList.add('hidden');paused=false;};
 
 // ---------- save ----------
-function save(){if(!running&&!P.fig)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify({v:1,p:{x:P.x,z:P.z,hp:P.hp,hunger:P.hunger,thirst:P.thirst,temp:P.temp,water:P.water,spawn:P.spawn},slots,coins,selHot,chest,structs:structs.filter(s=>!s.perm).map(s=>({type:s.type,x:s.x,z:s.z,rot:s.rot,tier:s.tier,fuel:s.fuel,main:s.main,lvl:s.lvl,hp:s.hp,open:s.open,ammo:s.ammo})),dead:[...deadRes],quests,revealed,kills,bossDone,dayT,day,raidDay,char:CHAR,stepsOff,ftDay,dtDay,mode:MODE,ratedShown,kidState,treeInstalled,fruitAt,tchOpen:TCH.filter(c=>c.open).map(c=>c.id),tchSeen:TCH.filter(c=>c.seen).map(c=>c.id)}));}catch(e){}}
+function save(){if(!running&&!P.fig)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify({v:1,p:{x:P.x,z:P.z,hp:P.hp,hunger:P.hunger,thirst:P.thirst,temp:P.temp,water:P.water,spawn:P.spawn},slots,coins,selHot,chest,structs:structs.filter(s=>!s.perm).map(s=>({type:s.type,x:s.x,z:s.z,rot:s.rot,tier:s.tier,fuel:s.fuel,main:s.main,lvl:s.lvl,hp:s.hp,open:s.open,ammo:s.ammo})),dead:[...deadRes],quests,revealed,kills,bossDone,dayT,day,raidDay,char:CHAR,eq:EQ,stepsOff,ftDay,dtDay,mode:MODE,ratedShown,kidState,treeInstalled,fruitAt,tchOpen:TCH.filter(c=>c.open).map(c=>c.id),tchSeen:TCH.filter(c=>c.seen).map(c=>c.id)}));}catch(e){}}
 function load(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY));if(!d)return false;Object.assign(P,d.p);P.maxHp=P.maxHp||100;if(d.slots)slots=d.slots.concat(new Array(NSLOT).fill(null)).slice(0,NSLOT);else if(d.inv){const L={axe:'stone_axe',pickaxe:'stone_pickaxe',obsidian_blade:'obsidian_sword'};for(const k in d.inv)addItem(L[k]||k,d.inv[k]);}coins=d.coins||0;selHot=d.selHot||0;chest=d.chest||{};raidDay=d.raidDay||0;if(d.char){CHAR=d.char;localStorage.setItem('cq_charprofile',JSON.stringify(CHAR));}stepsOff=!!d.stepsOff;ftDay=d.ftDay||0;dtDay=d.dtDay||0;if(d.mode)MODE=d.mode;ratedShown=!!d.ratedShown;updModeCards();if(d.kidState)for(const id in kidState)if(d.kidState[id])kidState[id]={...kidState[id],...d.kidState[id]};treeInstalled=d.treeInstalled||[];fruitAt=d.fruitAt||0;for(const c of TCH){if((d.tchOpen||[]).includes(c.id))openLook(c);if((d.tchSeen||[]).includes(c.id))c.seen=1;}
  for(const s of d.structs||[]){const {type,x,z,...o}=s;placeStruct(type,x,z,o);}if(!structs.some(s=>s.main))placeStruct('campfire',0,-1.5,{main:1,fuel:60});for(const id of d.dead||[]){const o=RES[id];if(o){o.alive=false;hideRes(o);deadRes.add(id);o.respawnAt=performance.now()/1000+300;}}
- quests=d.quests||{};revealed=d.revealed||{};kills=d.kills||{};bossDone=d.bossDone||{};dayT=d.dayT||40;day=d.day||1;return true;}catch(e){return false;}}
+ quests=d.quests||{};revealed=d.revealed||{};kills=d.kills||{};bossDone=d.bossDone||{};dayT=d.dayT||40;day=d.day||1;
+ if(d.eq)for(const sl of ASLOTS)if(d.eq[sl]&&armorInfo(d.eq[sl].k))EQ[sl]={k:d.eq[sl].k,dur:d.eq[sl].dur??armorMaxDur(d.eq[sl].k)};
+ if(!ASLOTS.some(sl=>EQ[sl])){let bi=-1,bp=-1;for(let i=0;i<NSLOT;i++){const sl2=slots[i];if(sl2&&armorInfo(sl2.k)){const inf=armorInfo(sl2.k);const pts=ASETS[inf.set].pts[inf.idx]+(inf.legacy?10:0);if(pts>bp){bp=pts;bi=i;}}}if(bi>=0){const sl2=slots[bi];EQ[armorInfo(sl2.k).slot]={k:sl2.k,dur:sl2.dur??armorMaxDur(sl2.k)};slots[bi]=null;}}
+ return true;}catch(e){return false;}}
 setInterval(()=>{if(running)save();},10000);addEventListener('visibilitychange',()=>{if(document.hidden&&running)save();});addEventListener('pagehide',()=>running&&save());
 
 // ---------- realistic graphics layer: sky, env lighting, water, grass, particles, post-processing ----------
@@ -1244,7 +1305,7 @@ function update(dt){const b=biomeAt(P.x,P.z);
  let mx=joy.x,mz=joy.y;if(keys.w||keys.arrowup)mz-=1;if(keys.s||keys.arrowdown)mz+=1;if(keys.a||keys.arrowleft)mx-=1;if(keys.d||keys.arrowright)mx+=1;const ml=Math.hypot(mx,mz);
  P.blocking=(has('shield')||has('guard_shield'))&&!P.dead&&(keys.q||rBlock||mBlock);if(P.blocking){mx*=.5;mz*=.5;}
  if(P.dead||P.tower){mx=mz=0;}
- if(ml>.1){const cy=Math.cos(camYaw),sy=Math.sin(camYaw);const rx=mx*cy+mz*sy,rz=-mx*sy+mz*cy;mx=rx;mz=rz;const sp=6.2*Math.min(1,ml)*(inPond(P.x,P.z)?.5:1)*(b==='snow'&&!has('cold_gear')&&!has('snow_wolf_armor')?.8:1)*(has('sandstorm_boots')?1.15:1)*((P.spdT>0)?1.3:1)*(has('sled')&&b==='snow'?1.25:1);const nx=P.x+mx/Math.max(1,ml)*sp*dt,nz=P.z+mz/Math.max(1,ml)*sp*dt;
+ if(ml>.1){const cy=Math.cos(camYaw),sy=Math.sin(camYaw);const rx=mx*cy+mz*sy,rz=-mx*sy+mz*cy;mx=rx;mz=rz;const sp=6.2*Math.min(1,ml)*(inPond(P.x,P.z)?.5:1)*(b==='snow'&&!coldResist()?.8:1)*(has('sandstorm_boots')?1.15:1)*((P.spdT>0)?1.3:1)*(has('sled')&&b==='snow'?1.25:1);const nx=P.x+mx/Math.max(1,ml)*sp*dt,nz=P.z+mz/Math.max(1,ml)*sp*dt;
   if(!pBlocked(nx,P.z))P.x=clamp(nx,-W+3,W-3);if(!pBlocked(P.x,nz))P.z=clamp(nz,-W+3,W-3);P.dir=Math.atan2(mx,mz);rigSet(P.fig,ml>.6?'run':'walk',1);}else if(!P.dead)rigSet(P.fig,'idle');
  if(P.tower){P.x=P.tower.x;P.z=P.tower.z;P.jy=3.45;P.vy=0;}
  else{const _top=structTopAt(P.x,P.z);
@@ -1254,13 +1315,13 @@ function update(dt){const b=biomeAt(P.x,P.z);
  if(actHeld&&P.cd<=0)doAttack(mouseAim());if(keys.z)camYaw+=1.8*dt;if(keys.x)camYaw-=1.8*dt;P.cd-=dt;if(P.spdT>0)P.spdT-=dt;if(P.warmT>0)P.warmT-=dt;if(P.fireT>0)P.fireT-=dt;
  P.fig.position.set(P.x,H(P.x,P.z)+P.jy,P.z);P.fig.rotation.y=P.dir;rigTick(P.fig,dt);jumpPose(dt);
  // survival
- if(!P.dead){const hot=(b==='desert'&&!has('heat_gear'));P.hunger-=dt*.22;P.thirst-=dt*(hot?.75:.3);
+ if(!P.dead){const hot=(b==='desert'&&!heatResist());P.hunger-=dt*.22;P.thirst-=dt*(hot?.75:.3);
   const fire=litAt(P.x,P.z);
-  if(b==='snow')P.temp+=has('cold_gear')?(fire?8:1)*dt:(fire?10:(night()?-5:-3.5)*(has('ice_ring')?.45:1)*((P.warmT>0)?.35:1))*dt;
-  else if(b==='lava')P.temp+=(has('heat_gear')||has('ember_armor'))?1*dt:-5*((P.fireT>0)?.25:1)*dt;else if(b==='desert')P.temp+=(has('heat_gear')||has('ember_armor'))?1*dt:(night()?2:-2)*((P.fireT>0)?.4:1)*dt;else P.temp+=6*dt;
+  if(b==='snow')P.temp+=coldResist()?(fire?8:1)*dt:(fire?10:(night()?-5:-3.5)*(has('ice_ring')?.45:1)*((P.warmT>0)?.35:1))*dt;
+  else if(b==='lava')P.temp+=heatResist()?1*dt:-5*((P.fireT>0)?.25:1)*dt;else if(b==='desert')P.temp+=heatResist()?1*dt:(night()?2:-2)*((P.fireT>0)?.4:1)*dt;else P.temp+=6*dt;
   P.temp=clamp(P.temp,0,100);P.hunger=clamp(P.hunger,0,100);P.thirst=clamp(P.thirst,0,100);
   if(MODE!=='decorative'){if(P.hunger<=0)hurtTick(1.2*dt,'starving');if(P.thirst<=0)hurtTick(1.6*dt,'dehydrated');}if(P.temp<=0)hurtTick(3*dt,b==='snow'?'freezing! Craft cold gear':'overheating! Craft heat gear');
-  if(inLava(P.x,P.z))hurtTick(((has('heat_gear')||has('ember_armor'))?6:18)*((P.fireT>0)?.3:1)*dt,'in LAVA!');
+  if(inLava(P.x,P.z))hurtTick((heatResist()?6:18)*((P.fireT>0)?.3:1)*dt,'in LAVA!');
   if(P.hunger>50&&P.thirst>50&&P.temp>30&&P.hp<P.maxHp)P.hp=Math.min(P.maxHp,P.hp+(fire?1.5:.5)*(has('sun_amulet')?3:1)*dt+(has('heartwood_charm')?.3:0)*dt+(treeInstalled.includes('vine_seed')?.35:0)*dt);}
  {const lf=!P.dead&&litFire(P.x,P.z);if(lf&&(lf.lvl||1)>=3&&P.hp<P.maxHp)P.hp=Math.min(P.maxHp,P.hp+(((lf.lvl||1)>=5?4:2)+(treeInstalled.length>=4?3:0))*dt);}
  musT-=dt;if(musT<=0){musT=.5;MUS.set(pickTheme(b));}
@@ -1280,7 +1341,7 @@ function update(dt){const b=biomeAt(P.x,P.z);
  shake=Math.max(0,shake-dt);const cd2=camDist;camera.position.lerp(V.set(P.x+Math.sin(camYaw)*cd2*.64,H(P.x,P.z)+cd2*.77,P.z+Math.cos(camYaw)*cd2*.64),.15);fadeOccluders();camera.position.x+=(Math.random()-.5)*shake;camera.lookAt(P.x,H(P.x,P.z)+1,P.z);
  // hud
  if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').style.opacity=0;}
- hudT-=dt;if(hudT<=0){hudT=.15;$('hpB').style.width=(P.hp/P.maxHp*100)+'%';$('coinV').textContent=coins;$('dayV').textContent=day;$('raidV').textContent=raidHudTxt();for(const c of TCH)if(!c.seen&&Math.hypot(c.x-P.x,c.z-P.z)<30)c.seen=1;$('huB').style.width=P.hunger+'%';$('thB').style.width=P.thirst+'%';$('waB').style.width=P.temp+'%';$('waL').textContent=tempLabel(b);$('waB').style.background=b==='snow'?'#7fd0ff':b==='desert'||b==='lava'?'#ff7a30':'#f1c40f';
+ hudT-=dt;if(hudT<=0){hudT=.15;$('hpB').style.width=(P.hp/P.maxHp*100)+'%';updArmorBar();$('coinV').textContent=coins;$('dayV').textContent=day;$('raidV').textContent=raidHudTxt();for(const c of TCH)if(!c.seen&&Math.hypot(c.x-P.x,c.z-P.z)<30)c.seen=1;$('huB').style.width=P.hunger+'%';$('thB').style.width=P.thirst+'%';$('waB').style.width=P.temp+'%';$('waL').textContent=tempLabel(b);$('waB').style.background=b==='snow'?'#7fd0ff':b==='desert'||b==='lava'?'#ff7a30':'#f1c40f';
   const _cm=Math.floor(((ph*24+6)%24)*60),_hh=Math.floor(_cm/60),_mm=_cm%60;$('info').textContent=`${BIOME[b].n} · 📅 Day ${day} · 🕰️ ${String(_hh).padStart(2,'0')}:${String(_mm).padStart(2,'0')}${night()?' 🌙':_hh>=18?' 🌆':' ☀️'}`;updSteps();
   const u=useTarget();$('useL').textContent=u?u.l:'USE';const pr=$('prompt');const bs=!moving?breakableNear():null;
   if(!isTouch&&(u||bs||breakConfirm)){pr.textContent=breakConfirm&&breakConfirm.s===bs?'🔨 Break '+nm(bs.type)+'?  B = yes · Esc = no':(u?'E: '+u.l:'')+(bs?(u?'   ·   ':'')+'B: Break '+nm(bs.type):'');pr.classList.remove('hidden');}else pr.classList.add('hidden');
@@ -1499,7 +1560,7 @@ function openTreasure(c){if(c.open)return;openLook(c);c.seen=1;const lv=c.lv,L={
  L.coins=ri(8,20)*lv;if(lv<=2)L.iron=ri(1,2)+lv;if(lv>=2)L.gold=ri(lv-1,lv);if(r()<.25*lv)L.gem=ri(1,lv>3?2:1);if(lv>=4)L.obsidian=ri(1,3);
  L[r()<.5?'bandage':'cooked_meat']=ri(1,3);if(lv>=3&&r()<.5)L.crystal=ri(1,2);
  if(r()<(c.boss?.3:.08))L.heart_piece=1;
- if(r()<(c.boss?.5:.15)){const G=[,['iron_sword','iron_pickaxe','hide_armor'],['iron_armor','bow','iron_axe'],['gold_sword','gold_pickaxe','gold_armor'],['obsidian_sword','obsidian_pickaxe','gold_armor'],['obsidian_armor','obsidian_sword','obsidian_axe']][Math.min(5,lv)];L[G[ri(0,2)]]=1;}
+ if(r()<(c.boss?.5:.15)){const G=[,['iron_sword','iron_pickaxe','hide_chest'],['iron_chest','bow','iron_helmet'],['gold_sword','gold_legs','gold_chest'],['obsidian_boots','obsidian_pickaxe','gold_chest'],['obsidian_chest','obsidian_sword','obsidian_helmet']][Math.min(5,lv)];L[G[ri(0,2)]]=1;}
  const got=[];for(const k in L){add(k,L[k]);got.push(k==='coins'?'+'+L[k]+' 🪙':k==='heart_piece'?'❤️ Heart piece!':'+'+L[k]+' '+nm(k));}
  sfx.win();toast('🎁 Treasure! '+got.join('  '),3.5);save();return L;}
 function tickTreasure(dt){const t=performance.now()/1000;for(const c of TCH){const sp=c.mesh.userData.spark;if(sp&&Math.abs(c.x-P.x)<60&&Math.abs(c.z-P.z)<60){sp.rotation.y=t*.8;sp.material.opacity=.6+.4*Math.sin(t*4+c.id);sp.position.y=Math.sin(t*2+c.id)*.1;}}}
@@ -1510,10 +1571,10 @@ try{Object.assign(CHAR,JSON.parse(localStorage.getItem('cq_charprofile')||'{}'))
 const SKINS=[0xffe3c2,0xf0c8a0,0xe8b890,0xc68642,0x9c6642,0x6f4423],HAIRC=[0x1a120a,0x5a3a1a,0xa06a2c,0xd8b060,0xb03030,0x3050c8,0x2e8b57,0xe8e8e8,0xff7ac0],OUTC=[0x2e6a8a,0x2e8b57,0xc0392b,0xe67e22,0x8e44ad,0x2471a3,0x616a6b,0xf1c40f,0xec87bf,0x145a32],PANTSC=[0x4a3a2a,0x2c3e50,0x616a6b,0x7a3a1e,0x1e4a3a,0x3a2a4a];
 const HAIRSTYLES=['short','long','spiky','bun','mohawk','curly','bald'],FACES=['smile','happy','brave','sleepy','cool'];
 const HATS=[{id:'none',n:'No hat'},{id:'cap',n:'🧢 Cap'},{id:'leaf',n:'🍃 Leaf hat'},{id:'explorer',n:'🧭 Explorer hat'},{id:'straw',n:'👒 Straw hat',un:()=>Object.values(quests||{}).some(q=>!q.active&&q.i>0),why:'Complete a villager quest'},{id:'fur',n:'❄️ Snow fur hood',un:()=>bossDone.yeti,why:'Defeat the Yeti King'},{id:'leaves',n:'🌿 Vine crown',un:()=>bossDone.vine,why:'Defeat the Vine Queen'},{id:'nemes',n:'☀️ Sun nemes',un:()=>bossDone.pharaoh,why:'Defeat the Sand Pharaoh'},{id:'horns',n:'🌋 Magma horns',un:()=>bossDone.titan,why:'Defeat the Magma Titan'},{id:'crown',n:'👑 Realms crown',un:()=>has('crown')||BOSSES.every(b=>bossDone[b.id]),why:'Defeat all four bosses'}];
-const ARMORVIS=[['vine_armor',0x2e7a2e],['obsidian_armor',0x2a1e3a],['gold_armor',0xd8a820],['iron_armor',0xaab4be],['hide_armor',0x8a6a42]];
-const armorKey=()=>{for(const [k] of ARMORVIS)if(has(k))return k;return '';};
-function charLook(){const ak=armorKey(),ac=ak?(ARMORVIS.find(x=>x[0]===ak)||[])[1]:0;const h=CHAR.hat;
- return {skin:CHAR.skin,shirt:ac||CHAR.shirt,pants:CHAR.pants,hair:CHAR.hairStyle==='bald'?null:CHAR.hairColor,hairStyle:CHAR.hairStyle,face:CHAR.face,armor:ac||undefined,hat:h==='none'?undefined:h,hatCol:0xd84040,horns:h==='horns'?0x2a1410:undefined,crown:h==='crown'?1:undefined};}
+const armorKey=()=>armorSig();
+function charLook(){const eq={};for(const sl of ASLOTS){const pc=EQ[sl];if(pc){const inf=armorInfo(pc.k);if(inf)eq[sl]={s:inf.set,b:pc.dur<=0?1:0};}}
+ const h=EQ.helmet?undefined:CHAR.hat; // an equipped helmet replaces your hat visual
+ return {skin:CHAR.skin,shirt:CHAR.shirt,pants:CHAR.pants,hair:CHAR.hairStyle==='bald'?null:CHAR.hairColor,hairStyle:CHAR.hairStyle,face:CHAR.face,eq,hat:h==='none'?undefined:h,hatCol:0xd84040,horns:EQ.helmet?undefined:(h==='horns'?0x2a1410:undefined),crown:EQ.helmet?undefined:(h==='crown'?1:undefined)};}
 let pv=null;
 function applyChar(saveIt=true){CHAR.name=($('charName')?$('charName').value.trim():'')||CHAR.name||'Camper';localStorage.setItem('cq_charprofile',JSON.stringify(CHAR));const hn=$('charNameHud');if(hn)hn.textContent='👤 '+CHAR.name;
  if(P.fig){const x=P.x,z=P.z,d=P.dir;scene.remove(P.fig);if(P.tool)P.tool=null;toolHeld='?';P.fig=makeHuman(charLook());P.fig.position.set(x,H(x,z)+(P.jy||0),z);P.fig.rotation.y=d;scene.add(P.fig);P._ak=armorKey();equipVisual();}
@@ -1533,8 +1594,9 @@ function randomChar(){const pk=a=>a[Math.floor(Math.random()*a.length)];CHAR.ski
 // ---------- wandering traders ----------
 const TRADERS=[];let ftDay=0,dtDay=0,ftJingle=0;
 Object.assign(ITEMS,{ammo_bundle:'🏹 Arrow bundle',guard_shield:'🛡️ Guardian shield',thorn_wall:'🌵 Thorn wall',guardian_totem:'🗿 Guardian totem'});
+for(const _set in ASETS)for(let _i=0;_i<4;_i++)ITEMS[_set+'_'+ASLOTS[_i]]=APICON[ASLOTS[_i]]+' '+ASETS[_set].n+' '+APART[ASLOTS[_i]];
 Object.assign(ITEMS,{crossbow:'🏹 Crossbow',trident:'🔱 Trident',machete:'🔪 Machete',snow_wolf_armor:'🐺 Snow Wolf Armor',ember_armor:'🌋 Ember Armor',leaf_armor:'🍃 Leaf Armor',berry_pie:'🥧 Berry Pie',meat_skewer:'🍢 Meat Skewer',raw_fish:'🐟 Raw Fish',grilled_fish:'🍣 Grilled Fish',heal_tonic:'🧪 Healing Tonic',speed_tonic:'⚡ Speed Tonic',warmth_tonic:'♨️ Warmth Tonic',fire_tonic:'🔥 Fireproof Tonic',rug:'🟥 Rug',table:'🪑 Table',flower_pot:'🌸 Flower Pot',sign_post:'🪧 Signpost',path_stones:'🪨 Path Stones',boss_compass:'🧭 Boss Compass',fishing_rod:'🎣 Fishing Rod',repair_kit:'🧰 Repair Kit',sled:'🛷 Sled',heartwood_charm:'💚 Heartwood Charm',ice_ring:'💍 Ice Ring',thorn_armor:'🌵 Thorn Armor',sandstorm_boots:'🥾 Sandstorm Boots',lava_sword:'🔥 Lava Sword',healing_fruit:'🍎 Healing Fruit',frost_root:'❄️ Root of Frost',vine_seed:'🌱 Seed of Vines',sand_heart:'🏜️ Heart of Sand',ember_core:'🔥 Ember Core'});
-SHOP.forest={berries:1,cooked_meat:5,waterskin:12,torch:2};SHOP.defense={spike_barricade:18,wall:12,gate:22,thorn_wall:45,iron_wall:38,flame_trap:55,alarm_bell:30,watchtower:70,turret:95,ammo_bundle:15,shield:40,guard_shield:85};
+SHOP.forest={berries:1,cooked_meat:5,waterskin:12,torch:2};Object.assign(SHOP.oak,{iron_helmet:45,iron_chest:80,iron_legs:65,iron_boots:35,hide_helmet:18,hide_chest:30});SHOP.defense={spike_barricade:18,wall:12,gate:22,thorn_wall:45,iron_wall:38,flame_trap:55,alarm_bell:30,watchtower:70,turret:95,ammo_bundle:15,shield:40,guard_shield:85};
 const FSELL={raw_meat:3,cooked_meat:5,hide:6,wood:2,stone:2,berries:2,fiber:1,feather:3,cactus_fruit:3};
 function traderFig(kind){let f,cart=null;
  if(kind==='forest'){f=makeHuman({skin:0xc68642,shirt:0x3a6a2e,pants:0x5a4228,hair:0x2a1a0c,hat:'straw',face:'happy',scarf:0x7a9a3a});const pack=new THREE.Group();const pm=new THREE.MeshStandardMaterial({color:0x8a6a42});part(pack,BX,pm,0,0,0,.5,.55,.25);pack.position.set(0,1.25,-.28);f.add(pack);const L=new THREE.PointLight(0xffc060,18,13,1.4);L.position.set(.5,1.6,.3);f.add(L);}
@@ -1684,7 +1746,15 @@ setInterval(hoverTick,120);
 // ----- inventory / recipe tooltips -----
 const ARMORP={hide_armor:20,leaf_armor:25,iron_armor:40,snow_wolf_armor:45,gold_armor:50,ember_armor:50,obsidian_armor:60,vine_armor:65,thorn_armor:35};
 const ITEMDESC={heartwood_charm:'Slowly regenerates your health. Pip’s thank-you gift.',ice_ring:'Cold drains 55% slower in the snow. Nia’s gift.',thorn_armor:'Jungle-woven thorns. Kito’s gift.',sandstorm_boots:'+15% movement speed. Zara’s gift.',lava_sword:'Sets enemies (and bosses) on fire. Ash’s gift.',boss_compass:'All four boss lairs show on your map (M).',fishing_rod:'Use from the hotbar beside a pond to catch Raw Fish.',repair_kit:'Use: fully repairs every damaged defence within 14 m.',sled:'Passive: glide 25% faster across snow.',crossbow:'Ranged: slow, heavy bolts. Needs arrows.',bow:'Ranged weapon. Needs arrows.',bandage:'Use: +30 health.',waterskin:'Carries 5 sips of water. Refill at ponds/wells.',torch:'Lights your way at dusk when carried.',lantern:'Bright, forever light at dusk.',healing_fruit:'From the healed Tree of Healing.',frost_root:'A Tree Part — bring it to the Tree of Healing (forest centre).',vine_seed:'A Tree Part — bring it to the Tree of Healing (forest centre).',sand_heart:'A Tree Part — bring it to the Tree of Healing (forest centre).',ember_core:'A Tree Part — bring it to the Tree of Healing (forest centre).',shield:'Hold Q / right-click to block 65% of damage.',guard_shield:'Hold Q / right-click to block 82% of damage.',cold_gear:'Survive the snowy mountains.',heat_gear:'Survive the desert & volcanic heat.',sun_amulet:'Fast health regeneration.',crown:'+50% damage. Champion of the Four Realms!'};
-function itemInfo(k,n){if(!k)return null;const lines=[];
+function itemInfo(k,n,dur){if(!k)return null;const lines=[];const ainf=armorInfo(k);
+ if(ainf){const st=ASETS[ainf.set];lines.push(APICON[ainf.slot]+' '+st.n+' '+APART[ainf.slot]+' · 🛡️ '+st.pts[ainf.idx]+' armor pts ('+Math.round(st.pts[ainf.idx]*3)+'% less damage)');
+  lines.push('🔧 Durability '+(dur!==undefined?Math.max(0,Math.round(dur))+'/':'max ')+armorMaxDur(k)+(dur!==undefined&&dur<=0?' · 💥 BROKEN — no protection until repaired':''));
+  lines.push('Repair with 1 '+nm(st.rep)+' (+50%) or a Repair Kit (full)');
+  if(ainf.set==='snow_wolf'||ainf.set==='cold')lines.push('❄️ Full set: cold resistant');
+  if(ainf.set==='ember')lines.push('🌋 Full set: fire & heat resistant');
+  if(ainf.set==='heat')lines.push('🥵 Full set: desert & lava resistant');
+  if(ainf.set==='thorn')lines.push('🌵 Full set: thorn spikes');
+  lines.push('Equip: right-click in bag, use from hotbar, or drag onto the paper doll');}
  if(WEAP[k])lines.push('⚔️ Damage '+WEAP[k].d+' · reach '+WEAP[k].r+(k.endsWith('_axe')?' · chops trees in 5 hits':k.endsWith('_pickaxe')?' · mines rock & ore':''));
  if(k==='bow')lines.push('🏹 Damage 14 · uses arrows');
  if(k==='crossbow')lines.push('🏹 Damage 24 · uses arrows · slower, harder hits');
@@ -1706,14 +1776,16 @@ function slotInfoFromEl(el){if(!el)return null;
   return{title:nm(r.out)+(r.n>1?' ×'+r.n:''),body:(r.d||'')+'<br>🧾 Needs: '+Object.entries(need).map(([k,n])=>n+' '+nm(k).replace(/^\S+ /,'')).join(', ')+'<br>'+(r.tier?'🛠️ Bench tier '+r.tier:'🎒 Bag 2×2'),hint:'Auto-fill loads the grid · double-click = craft all'};}
  const buy=el.closest&&el.closest('[data-buy]');if(buy)return itemInfo(buy.dataset.buy,1);
  const sell=el.closest&&el.closest('[data-sell],[data-sellall]');if(sell)return itemInfo((sell.dataset.sell||sell.dataset.sellall),cnt(sell.dataset.sell||sell.dataset.sellall));
- const hs=el.closest&&el.closest('.hs');if(hs){const s2=slots[+hs.dataset.h];return s2?itemInfo(s2.k,s2.n):null;}
+ const ad=el.closest&&el.closest('[data-armor]');if(ad){const pc=EQ[ad.dataset.armor];return pc?itemInfo(pc.k,1,pc.dur):{title:APART[ad.dataset.armor]+' (empty)',body:'Equip armor here: right-click a piece in your bag, use it from the hotbar, or drag it onto this slot.',hint:'Full matching sets give a bonus'};}
+ const hs=el.closest&&el.closest('.hs');if(hs){const s2=slots[+hs.dataset.h];return s2?itemInfo(s2.k,s2.n,s2.dur):null;}
  const sl=el.closest&&el.closest('.sl');if(!sl)return null;
  if(sl.dataset.take)return itemInfo(sl.dataset.take,chest[sl.dataset.take]);
  if(sl.dataset.store!==undefined&&sl.dataset.store!==''){const s2=slots[+sl.dataset.store];return s2?itemInfo(s2.k,s2.n):null;}
  if(sl.dataset.s==='out'){const r=matchGrid(cg,gsz(),curTier());return r?itemInfo(r.out,r.n||1):null;}
- if(sl.dataset.s){const ref=slotRef(sl.dataset.s);if(ref){const s2=ref[0][ref[1]];return s2?itemInfo(s2.k,s2.n):null;}}
+ if(sl.dataset.s){const ref=slotRef(sl.dataset.s);if(ref){const s2=ref[0][ref[1]];return s2?itemInfo(s2.k,s2.n,s2.dur):null;}}
  return null;}
 let tipEl2=null,tipTimer=null,invTipOn=false;
+{const _ht=document.getElementById('hoverTip');if(_ht&&_ht.parentNode!==document.body)document.body.appendChild(_ht);}
 function showInvTip(info,x,y){const tip=$('hoverTip');if(!info){invTipOn=false;tip.classList.add('hidden');return;}invTipOn=true;
  tip.innerHTML='<b>'+info.title+'</b><br>'+info.body+'<br><span style="color:#bcd38a;font-size:12px">'+info.hint+'</span>';tip.classList.remove('hidden');
  tip.style.left=Math.min(innerWidth-285,(x||mouse.x)+16)+'px';tip.style.top=Math.max(6,Math.min(innerHeight-150,(y||mouse.y)-10))+'px';}
@@ -1724,5 +1796,5 @@ document.addEventListener('pointerdown',e=>{const info=slotInfoFromEl(e.target);
  if(isTouch&&info){clearTimeout(tipTimer);tipTimer=setTimeout(()=>showInvTip(info,e.clientX,e.clientY),450);}});
 document.addEventListener('pointerup',e=>{clearTimeout(tipTimer);if(isTouch)setTimeout(()=>{if(!tipEl2){invTipOn=false;$('hoverTip').classList.add('hidden');}},2400);tipEl2=null;});
 
-window.__game={makeHuman,makeBeast,procAnimal,hoverPick,itemInfo,slotInfoFromEl,hoverCands,TUT,startTutorial,tutSteps,tutAdvance,MP,rateBase,showRating,mpCreate,mpJoin,showMpWin,get MODE(){return MODE;},set MODE(v){MODE=v;updModeCards();},updModeCards,PONDS,LAVA,weatherKind:()=>wxKind,GQ,updWeatherFx,KIDS,KIDENTS,kidState:()=>kidState,treeInstalled:()=>treeInstalled,TREE,talkKid,rescueKid,hintKid,installPart,claimableParts,treeTarget,PART_FOR_BOSS,buildCaves,breakableNear,tryBreak,doBreak,breakCost,breakRefund,breakNeedsConfirm,canBreak,get breakConfirm(){return breakConfirm;},PROJ,shoot,blockedNatural,losClear,structTopAt,SH,pickCampSpot,updTraderArrow,TRADERS,spawnTrader,despawnTrader,talkTrader,FSELL,updTraders,get ftDay(){return ftDay;},get dtDay(){return dtDay;},showHow,closeHow,updSteps,stepList,clockHr,get duskF(){return duskF;},updDusk,lightsOn,get stepsShown(){return stepsShown;},SAFEU,addSafeShader,CHAR:()=>CHAR,charLook,applyChar,openChar,closeChar,randomChar,HATS,armorKey,craftAll,maxCrafts,startMove,placeMove,cancelMove,movableNear,moveValid,raidNumFor,nextRaidDay,raidHudTxt,get moving(){return moving;},get moveGhost(){return moveGhost;},get moveRing(){return moveRing;},safeBlue,DEF,SEG,segDist,dmgStruct,slowAt,climb,climbDown,toggleGate,loadTurret,repairStruct,updDefenses,get raidQ(){return raidQ;},spawnCult,tickRaid,placePos,placeOk,rotGhost,get ghostType(){return ghostType;},get ghost(){return ghost;},get bellRang(){return bellRang;},setBlock:v=>{mBlock=v;},hurtPlayer,blocked,setCam:v=>{camDist=v;},MUS,pickTheme,FLV,upFire,openFire,renderFire,litFire,fireLight,fireFill,get curFire(){return curFire;},TCH,openTreasure,startRaid,jump,cultTick,get raidDay(){return raidDay;},get day(){return day;},set day(v){day=v;},get dayT(){return dayT;},set dayT(v){dayT=v;},pBlocked,P,get inv(){return inv;},set inv(v){inv=v;},RES,animals:()=>animals,get boss(){return boss;},BOSSES,VILLAGES,NPCS,structs,biomeAt,doAttack,gather,talk,useTarget,spawnAnimal,hitAnimal,hitBoss,quests:()=>quests,revealed:()=>revealed,bossDone:()=>bossDone,kills:()=>kills,add,save,teleport:(x,z)=>{P.x=x;P.z=z;},setPaused:v=>paused=v,night,setDay:t=>dayT=t,closeDlg:endTalk,endTalk,startGame,get slots(){return slots;},cg,matchGrid,craftOut,fillRecipe,RECIPES,openBag,closeBag,renderBag,useSlot,get selHot(){return selHot;},set selHot(v){selHot=v;},fuelFire,fireR,litAt,openShop,get coins(){return coins;},set coins(v){coins=v;},cnt,curTier,placeStruct,questList,addItem};
+window.__game={EQ:()=>EQ,equipArmorFromSlot,unequipArmor,repairArmor,armorPoints,armorPct,armorInfo,armorMaxDur,wearArmor,setEQ:(slot,v)=>{EQ[slot]=v;},makeHuman,makeBeast,procAnimal,hoverPick,itemInfo,slotInfoFromEl,hoverCands,TUT,startTutorial,tutSteps,tutAdvance,MP,rateBase,showRating,mpCreate,mpJoin,showMpWin,get MODE(){return MODE;},set MODE(v){MODE=v;updModeCards();},updModeCards,PONDS,LAVA,weatherKind:()=>wxKind,GQ,updWeatherFx,KIDS,KIDENTS,kidState:()=>kidState,treeInstalled:()=>treeInstalled,TREE,talkKid,rescueKid,hintKid,installPart,claimableParts,treeTarget,PART_FOR_BOSS,buildCaves,breakableNear,tryBreak,doBreak,breakCost,breakRefund,breakNeedsConfirm,canBreak,get breakConfirm(){return breakConfirm;},PROJ,shoot,blockedNatural,losClear,structTopAt,SH,pickCampSpot,updTraderArrow,TRADERS,spawnTrader,despawnTrader,talkTrader,FSELL,updTraders,get ftDay(){return ftDay;},get dtDay(){return dtDay;},showHow,closeHow,updSteps,stepList,clockHr,get duskF(){return duskF;},updDusk,lightsOn,get stepsShown(){return stepsShown;},SAFEU,addSafeShader,CHAR:()=>CHAR,charLook,applyChar,openChar,closeChar,randomChar,HATS,armorKey,craftAll,maxCrafts,startMove,placeMove,cancelMove,movableNear,moveValid,raidNumFor,nextRaidDay,raidHudTxt,get moving(){return moving;},get moveGhost(){return moveGhost;},get moveRing(){return moveRing;},safeBlue,DEF,SEG,segDist,dmgStruct,slowAt,climb,climbDown,toggleGate,loadTurret,repairStruct,updDefenses,get raidQ(){return raidQ;},spawnCult,tickRaid,placePos,placeOk,rotGhost,get ghostType(){return ghostType;},get ghost(){return ghost;},get bellRang(){return bellRang;},setBlock:v=>{mBlock=v;},hurtPlayer,blocked,setCam:v=>{camDist=v;},MUS,pickTheme,FLV,upFire,openFire,renderFire,litFire,fireLight,fireFill,get curFire(){return curFire;},TCH,openTreasure,startRaid,jump,cultTick,get raidDay(){return raidDay;},get day(){return day;},set day(v){day=v;},get dayT(){return dayT;},set dayT(v){dayT=v;},pBlocked,P,get inv(){return inv;},set inv(v){inv=v;},RES,animals:()=>animals,get boss(){return boss;},BOSSES,VILLAGES,NPCS,structs,biomeAt,doAttack,gather,talk,useTarget,spawnAnimal,hitAnimal,hitBoss,quests:()=>quests,revealed:()=>revealed,bossDone:()=>bossDone,kills:()=>kills,add,save,teleport:(x,z)=>{P.x=x;P.z=z;},setPaused:v=>paused=v,night,setDay:t=>dayT=t,closeDlg:endTalk,endTalk,startGame,get slots(){return slots;},cg,matchGrid,craftOut,fillRecipe,RECIPES,openBag,closeBag,renderBag,useSlot,get selHot(){return selHot;},set selHot(v){selHot=v;},fuelFire,fireR,litAt,openShop,get coins(){return coins;},set coins(v){coins=v;},cnt,curTier,placeStruct,questList,addItem};
 Object.assign(window.__game,{project:(x,z)=>{V.set(x,H(x,z)+1,z).project(camera);return{x:(V.x+1)/2*innerWidth,y:(1-V.y)/2*innerHeight};},camDist:()=>camDist,camYaw:()=>camYaw});
